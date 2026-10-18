@@ -47,7 +47,7 @@ export default function Home() {
             {STAGES.map((stage, i) => (
               <li key={stage.name} className={stage.featured ? "surface-burgundy rounded-3xl p-5" : "surface rounded-3xl p-5"}>
                 <div className="flex items-baseline gap-3">
-                  <span className="text-chrome font-mono text-lg font-bold">{String(i + 1).padStart(2, "0")}</span>
+                  <span className={`${stage.featured ? "text-white" : "text-chrome"} font-mono text-lg font-bold`}>{String(i + 1).padStart(2, "0")}</span>
                   <h3 className="font-semibold">{stage.name}</h3>
                 </div>
                 <p className={stage.featured ? "mt-2 text-sm text-white" : "mt-2 text-sm text-muted-foreground"}>{stage.detail}</p>

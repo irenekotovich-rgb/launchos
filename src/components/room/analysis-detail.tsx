@@ -28,13 +28,13 @@ export function AnalysisDetail({ doc, field, basePath, editable = false }: { doc
       </header>
 
       {facts.length > 0 ? (
-        <div className="grid gap-3 sm:grid-cols-3">
+        <dl className="grid gap-3 sm:grid-cols-3">
           {facts.map((h, j) => (
             <div key={j} className={j === 0 ? "surface-burgundy rounded-3xl p-6" : "surface rounded-3xl p-6"}>
-              <HighlightView h={h} size="lg" />
+              <HighlightView h={h} size="lg" onMetal={j === 0} />
             </div>
           ))}
-        </div>
+        </dl>
       ) : (
         <p className="surface rounded-3xl p-6 text-muted-foreground">No key facts yet.</p>
       )}
@@ -51,7 +51,7 @@ export function AnalysisDetail({ doc, field, basePath, editable = false }: { doc
               {f.points.map((p, j) => (
                 <li key={j} className="flex gap-3 break-words">
                   <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
-                  <span className={p.toLowerCase().startsWith("needs your input") ? "text-warning" : ""}>{p}</span>
+                  <span className={/^(needs your input|to confirm)/i.test(p) ? "text-warning" : ""}>{p}</span>
                 </li>
               ))}
             </ul>

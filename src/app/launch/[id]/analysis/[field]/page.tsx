@@ -5,7 +5,7 @@ import { ANALYSIS_KEYS } from "@/components/room/analysis-section";
 import type { AnalysisKey } from "@/lib/types";
 import { OwnAnalysis } from "./own-analysis";
 
-export const metadata: Metadata = { title: "Analysis — LaunchOS" };
+export const metadata: Metadata = { title: "Analysis — LaunchOS", robots: { index: false, follow: false } };
 
 export default async function OwnAnalysisPage({ params }: { params: Promise<{ id: string; field: string }> }) {
   const { id, field } = await params;

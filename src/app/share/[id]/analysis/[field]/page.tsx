@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { AnalysisDetail } from "@/components/room/analysis-detail";
+import { SharedBanner } from "@/components/room/launch-room";
 import { ANALYSIS_KEYS } from "@/components/room/analysis-section";
 import { SHARE_ID } from "@/lib/share";
 import { getShare } from "@/lib/share-store";
@@ -19,6 +20,7 @@ export default async function SharedAnalysis({ params }: { params: Promise<{ id:
     <>
       <SiteHeader />
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 pb-16 pt-2">
+        <SharedBanner sharedAt={doc.meta.sharedAt} />
         <AnalysisDetail doc={doc} field={field as AnalysisKey} basePath={`/share/${id}`} />
       </main>
     </>
