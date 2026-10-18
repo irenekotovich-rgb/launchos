@@ -39,7 +39,9 @@ export function modelChain(env: NodeJS.ProcessEnv = process.env): Candidate[] {
  */
 export function recoverJson<T>(text: string | undefined, schema: z.ZodType<T>): T | null {
   if (!text) return null;
-  const unfenced = text.replace(/```(?:json)?/gi, "");
+  // Use the first fenced block if there is one; never strip fences inside JSON string values.
+  const fenced = text.match(/```(?:json)?\s*\n([\s\S]*?)\n```/i);
+  const unfenced = fenced ? fenced[1] : text;
   const start = unfenced.indexOf("{");
   const end = unfenced.lastIndexOf("}");
   if (start < 0 || end <= start) return null;
@@ -92,7 +94,10 @@ export async function generateStructured<T>(
     } catch (err) {
       if (NoObjectGeneratedError.isInstance(err)) {
         const recovered = recoverJson(err.text, schema);
-        if (recovered) return { object: recovered, modelId: c.id };
+        if (recovered) {
+          console.warn(`[models] ${c.id} ignored structured output; JSON recovered from text`);
+          return { object: recovered, modelId: c.id };
+        }
       }
       // Log the class per attempt so a bad key or a schema mismatch is visible, not just exhaustion.
       // Messages are truncated provider errors; they never include our request headers or keys.

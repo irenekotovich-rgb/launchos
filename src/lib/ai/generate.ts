@@ -28,6 +28,8 @@ export interface GeneratedContent {
 
 /** The brief is user input: fenced so prompts can tell the model to treat it as data only. */
 export function briefAsText(b: LaunchBrief): string {
+  const n = (s: string) => s.replace(/<\/(asset|brief)/gi, "</ $1");
+  b = { ...b, productName: n(b.productName), what: n(b.what), who: n(b.who), whyNow: n(b.whyNow), claims: b.claims.map(n) };
   return [
     "<brief>",
     `Product / feature: ${b.productName}`,

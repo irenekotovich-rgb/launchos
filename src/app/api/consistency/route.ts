@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { checkConsistency } from "@/lib/ai/consistency";
 import { fail, parseBody, reserve, type Failure } from "@/lib/ai/route-guard";
+import { RUN_COST } from "@/lib/budget";
 import { consistencyRequest } from "@/lib/ai/schemas";
 
 export const runtime = "nodejs";
@@ -12,7 +13,7 @@ export type ConsistencyResponse = { status: "ok"; result: Awaited<ReturnType<typ
 export async function POST(req: Request) {
   const body = await parseBody(req, consistencyRequest);
   if (!body.ok) return body.res;
-  const slot = await reserve(req);
+  const slot = await reserve(req, RUN_COST.check);
   if (!slot.ok) return slot.res;
   try {
     return NextResponse.json<ConsistencyResponse>({ status: "ok", result: await checkConsistency(body.data) });

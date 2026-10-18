@@ -6,6 +6,7 @@ import { generateLaunchContent } from "@/lib/ai/generate";
 import { GenerationUnavailable } from "@/lib/ai/models";
 import { fail, parseBody, reserve, type Failure } from "@/lib/ai/route-guard";
 import { briefSchema } from "@/lib/ai/schemas";
+import { RUN_COST } from "@/lib/budget";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -15,7 +16,7 @@ export type GenerateResponse = { status: "ok"; content: Awaited<ReturnType<typeo
 export async function POST(req: Request) {
   const body = await parseBody(req, briefSchema, 16_000);
   if (!body.ok) return body.res;
-  const slot = await reserve(req);
+  const slot = await reserve(req, RUN_COST.generate, " Your plan was built without AI.");
   if (!slot.ok) return slot.res;
   try {
     const content = await generateLaunchContent(body.data);

@@ -16,3 +16,14 @@ describe("recoverJson", () => {
     expect(recoverJson(undefined, schema)).toBeNull();
   });
 });
+
+describe("recoverJson edge cases (review PR #9)", () => {
+  const s = z.object({ content: z.string() });
+  it("keeps fences inside string values intact", () => {
+    const raw = '{"content":"Use this:\\n```js\\nrun()\\n```"}';
+    expect(recoverJson(raw, s)?.content).toContain("```js");
+  });
+  it("prefers the first fenced block when prose has braces", () => {
+    expect(recoverJson('Here {draft}:\n```json\n{"content":"ok"}\n```\nNote {x}', s)).toEqual({ content: "ok" });
+  });
+});
