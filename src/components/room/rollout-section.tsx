@@ -1,4 +1,5 @@
 import { CheckCircle2, CircleDashed, PauseCircle, Radio } from "lucide-react";
+import { RecipientForm, RecipientRemove } from "./editors";
 import { Pill, Section } from "./section";
 import { StageMessage } from "./stage-message";
 import { fmtDay } from "@/lib/format";
@@ -29,7 +30,7 @@ function GateLine({ doc, stage, now }: { doc: LaunchDoc; stage: RolloutStage; no
   );
 }
 
-export function RolloutSection({ doc, now }: { doc: LaunchDoc; now: Date }) {
+export function RolloutSection({ doc, now, editable = false }: { doc: LaunchDoc; now: Date; editable?: boolean }) {
   const percent = rolledOutPercent(doc);
   const full = isFullyRolledOut(doc);
   const leads = doc.rollout.recipients;
@@ -109,10 +110,12 @@ export function RolloutSection({ doc, now }: { doc: LaunchDoc; now: Date }) {
               <li key={r.email} className="rounded-full border border-border px-3 py-1 text-xs">
                 <span className="font-semibold">{r.name}</span>{" "}
                 <span className="text-muted-foreground">· {r.role} · {r.group === "stakeholder" ? "stakeholder" : "team lead"}</span>
+                {editable && <RecipientRemove email={r.email} name={r.name} />}
               </li>
             ))}
           </ul>
         )}
+        {editable && <RecipientForm />}
       </div>
     </Section>
   );

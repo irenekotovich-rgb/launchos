@@ -1,3 +1,4 @@
+import { AlignmentTextEditor, LockAlignment, MetricForm, MetricRemove, SignoffEditor } from "./editors";
 import { EmptyState, Pill, Section } from "./section";
 import { fmtDay } from "@/lib/format";
 import { signoffList } from "@/lib/launch-status";
@@ -12,7 +13,7 @@ const TEAM_LABEL: Record<TeamKey, string> = {
   legal: "Legal / Compliance",
 };
 
-function MetricList({ title, metrics, tone }: { title: string; metrics: Metric[]; tone: "good" | "bad" }) {
+function MetricList({ title, metrics, tone, editable }: { title: string; metrics: Metric[]; tone: "good" | "bad"; editable: boolean }) {
   return (
     <div className="rounded-xl border border-border bg-background/30 p-4">
       <h3 className="flex items-center gap-2 font-semibold">
@@ -24,21 +25,25 @@ function MetricList({ title, metrics, tone }: { title: string; metrics: Metric[]
       ) : (
         <ul className="mt-2 flex flex-col gap-2.5">
           {metrics.map((m) => (
-            <li key={m.id} className="text-sm">
+            <li key={m.id} className="flex items-start justify-between gap-2 text-sm">
+              <div className="min-w-0">
               <p className="break-words font-medium">{m.name}</p>
               <p className="text-muted-foreground">
                 {tone === "good" ? "Target" : "Fails"} {m.direction === "above" ? "≥" : "≤"} {m.threshold}
                 {m.unit === "%" ? "%" : ` ${m.unit}`} · {m.owner}
               </p>
+              </div>
+              {editable && <MetricRemove metric={m} />}
             </li>
           ))}
         </ul>
       )}
+      {editable && <MetricForm kind={tone === "good" ? "success" : "failure"} />}
     </div>
   );
 }
 
-export function AlignmentSection({ doc }: { doc: LaunchDoc }) {
+export function AlignmentSection({ doc, editable = false }: { doc: LaunchDoc; editable?: boolean }) {
   const a = doc.alignment;
   const signoffs = signoffList(doc);
   const signed = signoffs.filter((s) => s.status === "signed").length;
@@ -49,23 +54,25 @@ export function AlignmentSection({ doc }: { doc: LaunchDoc }) {
       kicker={a.lockedAt ? `Locked ${fmtDay(a.lockedAt)} · ${signed}/6 signed` : `${signed}/6 teams signed`}
     >
       <div className="flex flex-col gap-4">
-        {a.problem ? (
+        {a.problem || editable ? (
           <div className="grid gap-3 md:grid-cols-2">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Problem</p>
-              <p className="mt-1 break-words">{a.problem}</p>
+              <p className="mt-1 break-words">{a.problem || <span className="text-muted-foreground">Not written yet.</span>}</p>
+              {editable && <AlignmentTextEditor field="problem" label="problem statement" />}
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">For whom</p>
               <p className="mt-1 break-words">{a.forWhom}</p>
+              {editable && <AlignmentTextEditor field="forWhom" label="for whom" />}
             </div>
           </div>
         ) : (
           <EmptyState>No problem statement yet. Alignment starts with one sentence everyone agrees on.</EmptyState>
         )}
         <div className="grid gap-3 md:grid-cols-2">
-          <MetricList title="Success metrics" metrics={a.metrics.filter((m) => m.kind === "success")} tone="good" />
-          <MetricList title="Failure metrics" metrics={a.metrics.filter((m) => m.kind === "failure")} tone="bad" />
+          <MetricList title="Success metrics" metrics={a.metrics.filter((m) => m.kind === "success")} tone="good" editable={editable} />
+          <MetricList title="Failure metrics" metrics={a.metrics.filter((m) => m.kind === "failure")} tone="bad" editable={editable} />
         </div>
         <div>
           <h3 className="mb-2 font-semibold">Sign-offs</h3>
@@ -78,10 +85,12 @@ export function AlignmentSection({ doc }: { doc: LaunchDoc }) {
                 </div>
                 <span className="break-words text-muted-foreground">{s.lead || "Lead not named"}</span>
                 {s.note && <span className="break-words text-xs text-muted-foreground">“{s.note}”</span>}
+                {editable && <SignoffEditor team={s.team} label={TEAM_LABEL[s.team]} />}
               </li>
             ))}
           </ul>
         </div>
+        {editable && <LockAlignment />}
       </div>
     </Section>
   );

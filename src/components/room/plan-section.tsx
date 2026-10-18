@@ -1,8 +1,9 @@
 import { Check, Circle } from "lucide-react";
+import { ChecklistToggle, ClosePhase } from "./editors";
 import { EmptyState, Section } from "./section";
 import type { LaunchDoc } from "@/lib/types";
 
-export function PlanSection({ doc }: { doc: LaunchDoc }) {
+export function PlanSection({ doc, editable = false }: { doc: LaunchDoc; editable?: boolean }) {
   const done = doc.checklist.filter((c) => c.done).length;
   const total = doc.checklist.length;
   const pct = total ? Math.round((done / total) * 100) : 0;
@@ -14,14 +15,19 @@ export function PlanSection({ doc }: { doc: LaunchDoc }) {
         <div className="flex flex-col gap-4">
           {doc.phases.map((phase) => {
             const items = doc.checklist.filter((c) => c.phase === phase.key);
-            if (!items.length) return null;
+            if (!items.length && !editable) return null;
             return (
               <div key={phase.key}>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{phase.name}</h3>
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{phase.name}</h3>
+                  {editable && <ClosePhase phase={phase.key} name={phase.name} />}
+                </div>
                 <ul className="flex flex-col gap-1.5">
                   {items.map((c) => (
                     <li key={c.id} className="flex gap-3 rounded-lg px-1 py-1 text-sm">
-                      {c.done ? (
+                      {editable ? (
+                        <ChecklistToggle id={c.id} done={c.done} label={c.label} />
+                      ) : c.done ? (
                         <Check className="mt-0.5 size-4 shrink-0 text-success" aria-label="Done" />
                       ) : (
                         <Circle className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-label="Open" />

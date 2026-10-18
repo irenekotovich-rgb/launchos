@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { runwayWarning } from "@/lib/plan";
-import { loadLaunch } from "@/lib/storage";
+import { loadLaunch, saveLaunch } from "@/lib/storage";
+import { LaunchEditor } from "@/components/room/editors";
 import { LaunchRoom } from "@/components/room/launch-room";
 import type { LaunchDoc } from "@/lib/types";
 
@@ -12,6 +13,7 @@ export function OwnLaunch({ id }: { id: string }) {
   const [state, setState] = useState<
     { status: "loading" } | { status: "missing" } | { status: "corrupt" } | { status: "ready"; doc: LaunchDoc }
   >({ status: "loading" });
+  const [saveError, setSaveError] = useState(false);
 
   useEffect(() => {
     setState({ status: "loading" });
@@ -55,10 +57,25 @@ export function OwnLaunch({ id }: { id: string }) {
   const warning = runwayWarning(doc.tier.tier, doc.brief.targetDate, new Date(doc.meta.createdAt));
   return (
     <div className="flex flex-col gap-4">
+      {saveError && (
+        <div role="alert" className="sticky top-2 z-30 flex items-start justify-between gap-3 rounded-lg border border-destructive/40 bg-card p-3 text-sm text-destructive shadow-lg">
+          <p>Unsaved: the last change couldn&apos;t be stored in this browser (storage full or blocked). It will be lost on reload.</p>
+          <button type="button" onClick={() => setSaveError(false)} className="shrink-0 font-semibold underline">Dismiss</button>
+        </div>
+      )}
       {warning && (
         <p role="note" className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning">{warning}</p>
       )}
-      <LaunchRoom doc={doc} now={new Date()} />
+      <LaunchEditor
+        doc={doc}
+        onChange={(next) => {
+          setState({ status: "ready", doc: next });
+          setSaveError(!saveLaunch(next));
+        }}
+      >
+        <LaunchRoom doc={doc} now={new Date()} editable />
+      </LaunchEditor>
+
     </div>
   );
 }
