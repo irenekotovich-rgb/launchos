@@ -22,13 +22,26 @@ export const tierOutput = z.object({
   }),
 });
 
+const highlight = z.object({
+  value: z.string().min(1).max(40),
+  label: z.string().min(1).max(60),
+  visual: z.enum(["stat", "meter", "trend"]).optional(),
+  level: z.number().min(0).max(100).optional(),
+  trend: z.enum(["up", "flat", "down"]).optional(),
+});
+const analysisArea = z.object({
+  summary: z.string(),
+  highlights: z.array(highlight).min(1).max(3),
+  points: z.array(z.string()).max(6),
+});
+
 export const analysisOutput = z.object({
-  context: z.string(),
-  environment: z.string(),
-  competitors: z.string(),
-  economics: z.string(),
-  capacity: z.string(),
-  audience: z.string(),
+  context: analysisArea,
+  environment: analysisArea,
+  competitors: analysisArea,
+  economics: analysisArea,
+  capacity: analysisArea,
+  audience: analysisArea,
 });
 
 export const assetOutput = z.object({

@@ -11,7 +11,14 @@ const brief: LaunchBrief = {
 const content: GeneratedContent = {
   tier: { tier: "T1", rationale: "New persona and pricing change." },
   messaging: { positioning: "p", pillars: ["a", "b", "c"], proofPoints: [], avoid: ["SOC 2 compliant"] },
-  analysis: { context: "c", environment: "e", competitors: "", economics: "x", capacity: "y", audience: "z" },
+  analysis: {
+    context: { summary: "c", highlights: [{ value: "2,400", label: "workspaces" }], points: ["p"] },
+    environment: { summary: "e", highlights: [{ value: "Q1", label: "renewals" }], points: [] },
+    competitors: { summary: "", highlights: [], points: [] },
+    economics: { summary: "x", highlights: [{ value: "Needs input", label: "payback" }], points: ["Needs your input: model"] },
+    capacity: { summary: "y", highlights: [{ value: "5", label: "engineers" }], points: [] },
+    audience: { summary: "z", highlights: [{ value: "3+", label: "releases/week" }], points: [] },
+  },
   assets: [{ type: "faq", title: "FAQ", content: "Q: A?", modelId: "gemini-3.5-flash" }],
   models: [{ step: "tier", modelId: "gemini-3.5-flash", ranAt: NOW.toISOString(), prompt: "brief-to-tier", promptVersion: 1 }],
   failedAssets: ["blog-post"],
@@ -25,7 +32,7 @@ describe("pipeline", () => {
     const doc = mergeGenerated(base, content, NOW);
     expect(doc.tier).toMatchObject({ tier: "T1", rationale: "New persona and pricing change." });
     expect(doc.checklist.length).toBeGreaterThan(base.checklist.length);
-    expect(doc.analysis.fields.context).toMatchObject({ text: "c", source: "ai-draft" });
+    expect(doc.analysis.fields.context).toMatchObject({ text: "c", source: "ai-draft", highlights: [{ value: "2,400", label: "workspaces" }], points: ["p"] });
     expect(doc.analysis.fields.competitors.text).toBe(""); // empty drafts are not written
     expect(doc.assets[0]).toMatchObject({ id: "a-faq", status: "draft", modelId: "gemini-3.5-flash" });
     expect(doc.meta.models[0]).toMatchObject({ prompt: "brief-to-tier", promptVersion: 1 });
