@@ -48,7 +48,7 @@ console.log("findings text:", (await p.locator("#assets").innerText()).match(/co
 // brief edit → stale
 await p.getByRole("button", { name: "Edit claims, one per line" }).click();
 await p.getByLabel("claims, one per line").fill("Approve a release in one click\nEvery approval is logged\nIncluded in the Business plan at no extra cost");
-await p.getByRole("button", { name: "Save" }).click();
+await p.getByRole("button", { name: "Save", exact: true }).click();
 await p.locator("#assets").screenshot({ path: "qa-shots/consistency-stale-after-brief-edit-1440.png" });
 console.log("stale count:", await p.getByText("Drifted from brief").count());
 await p.setViewportSize({ width: 390, height: 900 });
