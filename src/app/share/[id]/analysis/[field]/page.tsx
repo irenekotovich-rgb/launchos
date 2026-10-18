@@ -14,7 +14,14 @@ export const metadata: Metadata = { title: "Shared analysis — LaunchOS", robot
 export default async function SharedAnalysis({ params }: { params: Promise<{ id: string; field: string }> }) {
   const { id, field } = await params;
   if (!SHARE_ID.test(id) || !ANALYSIS_KEYS.includes(field as AnalysisKey)) notFound();
-  const doc = await getShare(id).catch(() => null);
+  let doc;
+  try {
+    doc = await getShare(id);
+  } catch (err) {
+    console.error("[share] read failed", err);
+    // A storage outage is not "deleted": say so instead of rendering not-found.
+    throw new Error("Shared launches are temporarily unavailable.");
+  }
   if (!doc) notFound();
   return (
     <>

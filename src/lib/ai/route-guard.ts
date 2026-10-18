@@ -5,17 +5,8 @@ import { NextResponse } from "next/server";
 import type { z } from "zod";
 import { modelChain } from "./models";
 import { refundRun, reserveRun } from "../budget";
+import { clientKey } from "../client-key";
 
-/** Prefer the platform-set client IP; x-forwarded-for's first value is client-supplied. */
-function clientKey(req: Request): string {
-  const h = req.headers;
-  return (
-    h.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() ||
-    h.get("x-real-ip")?.trim() ||
-    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    "anonymous"
-  );
-}
 
 export const MAX_BODY_BYTES = 110_000; // eight assets × 9,000 chars + brief and messaging, with headroom for UTF-8 and JSON escaping
 const bytes = (s: string) => new TextEncoder().encode(s).length;
@@ -67,5 +58,6 @@ export async function reserve(
           : `Today's ${budget.limit} live generations on this demo are used up. Run LaunchOS on your own keys for unlimited generations.`;
     return { ok: false, res: fail({ status: "budget-exhausted", message: message + suffix }) };
   }
-  return { ok: true, refund: () => refundRun(new Date(), client, cost) };
+  const reservation = budget.reservation;
+  return { ok: true, refund: () => refundRun(new Date(), client, cost, reservation) };
 }

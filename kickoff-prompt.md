@@ -12,7 +12,8 @@ a credential is missing or an external service is hard-down. Ask at minimum:
 - Which API keys are in .env.local (Gemini? OpenRouter? PostHog?)
 - Demo launch content: fictional B2B SaaS launch (answered: "Launch Service")
 - Visual direction (answered: no — grey metallic → lilac gradient, lilac + orange
-  accents; owner gives references once the product works end-to-end)
+  accents; owner gives references once the product works end-to-end).
+  Updated at the design checkpoint: burgundy + chrome metal, see docs/PRD.md §5.
 - Vercel: is the account linked (`vercel whoami`)? If not, hand me `vercel login`
   once during intake — the only interactive step you may give me
 - Any changes to docs/PRD.md before scope locks
@@ -42,9 +43,9 @@ install it; missing auth → the one thing you stop and ask for.
 Suggested PR split: `chore/scaffold`, `feat/launchdoc-types-and-demo-data`,
 `feat/landing-and-brief-form`, `feat/launch-room-page`, `feat/author-credit-and-chrome`.
 1. Next.js (App Router, TS, Tailwind, shadcn/ui). Grey metallic surfaces with a
-   gradient into lilac; accents lilac + orange (owner's direction at intake).
-   design-reference.html shows layout only (countdown, timeline, readiness
-   ring), not colors. Owner gives final visual references once the product
+   gradient into lilac; accents lilac + orange (owner's direction at intake;
+   superseded at the design checkpoint by burgundy + chrome metal).
+   (design-reference.html was removed in the repo audit: superseded.) Owner gives final visual references once the product
    works end-to-end; no generic AI-template aesthetics.
 2. `LaunchDoc` type in lib/types.ts: brief (what/who/why-now/date/claims), tier
    + rationale, analysis (context, environment, competitors, economics,

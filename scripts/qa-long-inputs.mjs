@@ -1,7 +1,7 @@
 // Visual QA for form states: empty-submit errors, then a 60-char name and 300-char claim
 // (CLAUDE.md long-input rule). Usage: npm run qa:long-inputs with the app on :3000.
 import { chromium } from "playwright";
-const B = "http://localhost:3000";
+const B = process.env.BASE_URL ?? "http://localhost:3000";
 const name60 = "Approval Workflows for Enterprise Release Calendars, Pro Max"; // 60 chars
 const claim300 = "Approve any scheduled release in a single click from the release calendar, the weekly digest email or the mobile app, with every decision recorded in an immutable audit trail that captures who approved, when they approved, which required checks had passed at that moment and which policy version applied.".slice(0, 300);
 const browser = await chromium.launch();

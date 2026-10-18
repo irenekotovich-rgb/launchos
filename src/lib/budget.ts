@@ -27,7 +27,8 @@ export function clientLimit(env: NodeJS.ProcessEnv = process.env): number {
 
 const HOUR = 3_600_000;
 const memory = new Map<string, number>();
-const clientRuns = new Map<string, { t: number; cost: number }[]>();
+const clientRuns = new Map<string, { id: number; t: number; cost: number }[]>();
+let nextReservation = 1;
 
 /** Cost in "runs": a full generation is ~9 model calls; a check or one regenerated asset is ~1. */
 export const RUN_COST = { generate: 1, asset: 1 / 6, check: 1 / 6 } as const;
@@ -63,36 +64,45 @@ async function writeCount(key: string, runs: number) {
 }
 
 export type BudgetCheck =
-  | { allowed: true; used: number; limit: number }
+  | { allowed: true; used: number; limit: number; reservation: number }
   | { allowed: false; reason: "daily" | "client" | "storage"; used: number; limit: number };
 
 export async function reserveRun(now: Date = new Date(), client = "anonymous", cost: number = RUN_COST.generate): Promise<BudgetCheck> {
   const perClient = clientLimit();
+  const recent = (clientRuns.get(client) ?? []).filter((r) => now.getTime() - r.t < HOUR);
   if (perClient > 0) {
-    const recent = (clientRuns.get(client) ?? []).filter((r) => now.getTime() - r.t < HOUR);
     const spent = round(recent.reduce((sum, r) => sum + r.cost, 0));
     if (spent + cost > perClient + 0.01) return { allowed: false, reason: "client", used: spent, limit: perClient };
-    clientRuns.set(client, [...recent, { t: now.getTime(), cost }]);
   }
+  // The client entry is recorded only once the daily check passes, so a denied request
+  // (daily cap, storage outage) doesn't spend the client's hourly quota.
+  const reservation = nextReservation++;
+  const record = () => {
+    if (perClient > 0) clientRuns.set(client, [...recent, { id: reservation, t: now.getTime(), cost }]);
+  };
 
   const limit = dailyLimit();
-  if (limit === 0) return { allowed: true, used: 0, limit };
+  if (limit === 0) {
+    record();
+    return { allowed: true, used: 0, limit, reservation };
+  }
   const key = dayKey(now);
   try {
     const used = await readCount(key);
     if (used + cost > limit + 0.01) return { allowed: false, reason: "daily", used, limit };
     await writeCount(key, round(used + cost));
-    return { allowed: true, used: round(used + cost), limit };
+    record();
+    return { allowed: true, used: round(used + cost), limit, reservation };
   } catch (err) {
     console.error("[budget] counter unavailable — refusing live runs (fail closed)", err);
     return { allowed: false, reason: "storage", used: -1, limit };
   }
 }
 
-/** Gives a run back when it produced nothing (every model failed). Best effort. */
-export async function refundRun(now: Date = new Date(), client = "anonymous", cost: number = RUN_COST.generate): Promise<void> {
-  const recent = clientRuns.get(client);
-  if (recent?.length) recent.pop();
+/** Gives a run back when it produced nothing (every model failed): removes exactly that reservation. Best effort. */
+export async function refundRun(now: Date = new Date(), client = "anonymous", cost: number = RUN_COST.generate, reservation?: number): Promise<void> {
+  const entries = clientRuns.get(client);
+  if (entries && reservation !== undefined) clientRuns.set(client, entries.filter((r) => r.id !== reservation));
   if (dailyLimit() === 0) return;
   try {
     const key = dayKey(now);

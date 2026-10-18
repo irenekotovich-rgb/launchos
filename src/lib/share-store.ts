@@ -69,7 +69,7 @@ export async function getShare(id: string, now = new Date()): Promise<LaunchDoc 
   const stored = await read(id);
   if (!stored) return null;
   if (now.getTime() - Date.parse(stored.createdAt) > SHARE_TTL_DAYS * 86_400_000) {
-    await remove(id).catch(() => {});
+    await remove(id).catch((err) => console.warn("[share] expired snapshot delete failed", err));
     return null;
   }
   return stored.doc;

@@ -27,7 +27,7 @@ export function Countdown({ target, initialNow, live = true }: { target: string;
     return <p className="text-2xl font-bold text-white">Launch day has passed</p>;
   }
   return (
-    <div className="grid grid-cols-4 gap-2" role="timer" aria-label={`${c.days} days ${c.hours} hours to launch`}>
+    <div className="grid grid-cols-4 gap-2" role="timer" aria-label={`${c.days} days ${c.hours} hours ${c.minutes} minutes to launch`}>
       {cells.map((cell) => (
         <div key={cell.l} className="rounded-2xl border border-white/15 bg-black/35 px-1 py-3 text-center shadow-[inset_0_1px_0_rgb(255_255_255/0.12)]">
           <b className="text-chrome block font-mono text-2xl font-extrabold tabular-nums sm:text-3xl">
