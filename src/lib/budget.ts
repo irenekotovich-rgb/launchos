@@ -27,7 +27,12 @@ export function clientLimit(env: NodeJS.ProcessEnv = process.env): number {
 
 const HOUR = 3_600_000;
 const memory = new Map<string, number>();
-const clientRuns = new Map<string, number[]>();
+const clientRuns = new Map<string, { t: number; cost: number }[]>();
+
+/** Cost in "runs": a full generation is ~9 model calls; a check or one regenerated asset is ~1. */
+export const RUN_COST = { generate: 1, asset: 1 / 6, check: 1 / 6 } as const;
+const round = (n: number) => Math.round(n * 1000) / 1000;
+// Comparisons allow 0.01 slack: rounded sixths (0.167…) must still add up to one run.
 const dayKey = (now: Date) => `budget/${now.toISOString().slice(0, 10)}.json`;
 
 async function readCount(key: string): Promise<number> {
@@ -36,7 +41,7 @@ async function readCount(key: string): Promise<number> {
     const res = await get(key, { access: "private", useCache: false });
     if (!res || res.statusCode !== 200) return 0;
     const json = JSON.parse(await new Response(res.stream).text()) as { runs?: unknown };
-    if (typeof json.runs !== "number" || !Number.isFinite(json.runs)) throw new Error("corrupt budget counter");
+    if (typeof json.runs !== "number" || !Number.isFinite(json.runs) || json.runs < 0) throw new Error("corrupt budget counter");
     return json.runs;
   } catch (err) {
     if (err instanceof BlobNotFoundError) return 0;
@@ -61,12 +66,13 @@ export type BudgetCheck =
   | { allowed: true; used: number; limit: number }
   | { allowed: false; reason: "daily" | "client" | "storage"; used: number; limit: number };
 
-export async function reserveRun(now: Date = new Date(), client = "anonymous"): Promise<BudgetCheck> {
+export async function reserveRun(now: Date = new Date(), client = "anonymous", cost: number = RUN_COST.generate): Promise<BudgetCheck> {
   const perClient = clientLimit();
   if (perClient > 0) {
-    const recent = (clientRuns.get(client) ?? []).filter((t) => now.getTime() - t < HOUR);
-    if (recent.length >= perClient) return { allowed: false, reason: "client", used: recent.length, limit: perClient };
-    clientRuns.set(client, [...recent, now.getTime()]);
+    const recent = (clientRuns.get(client) ?? []).filter((r) => now.getTime() - r.t < HOUR);
+    const spent = round(recent.reduce((sum, r) => sum + r.cost, 0));
+    if (spent + cost > perClient + 0.01) return { allowed: false, reason: "client", used: spent, limit: perClient };
+    clientRuns.set(client, [...recent, { t: now.getTime(), cost }]);
   }
 
   const limit = dailyLimit();
@@ -74,9 +80,9 @@ export async function reserveRun(now: Date = new Date(), client = "anonymous"): 
   const key = dayKey(now);
   try {
     const used = await readCount(key);
-    if (used >= limit) return { allowed: false, reason: "daily", used, limit };
-    await writeCount(key, used + 1);
-    return { allowed: true, used: used + 1, limit };
+    if (used + cost > limit + 0.01) return { allowed: false, reason: "daily", used, limit };
+    await writeCount(key, round(used + cost));
+    return { allowed: true, used: round(used + cost), limit };
   } catch (err) {
     console.error("[budget] counter unavailable — refusing live runs (fail closed)", err);
     return { allowed: false, reason: "storage", used: -1, limit };
@@ -84,14 +90,14 @@ export async function reserveRun(now: Date = new Date(), client = "anonymous"): 
 }
 
 /** Gives a run back when it produced nothing (every model failed). Best effort. */
-export async function refundRun(now: Date = new Date(), client = "anonymous"): Promise<void> {
+export async function refundRun(now: Date = new Date(), client = "anonymous", cost: number = RUN_COST.generate): Promise<void> {
   const recent = clientRuns.get(client);
   if (recent?.length) recent.pop();
   if (dailyLimit() === 0) return;
   try {
     const key = dayKey(now);
     const used = await readCount(key);
-    if (used > 0) await writeCount(key, used - 1);
+    if (used > 0) await writeCount(key, Math.max(0, round(used - cost)));
   } catch {
     /* refund is best effort */
   }

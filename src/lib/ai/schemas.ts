@@ -35,3 +35,44 @@ export const assetOutput = z.object({
   title: z.string().min(1),
   content: z.string().min(1),
 });
+
+export const messagingSchema = z.object({
+  positioning: z.string().max(600),
+  pillars: z.array(z.string().max(300)).max(6),
+  proofPoints: z.array(z.string().max(300)).max(12),
+  avoid: z.array(z.string().max(300)).max(12),
+});
+
+const ASSET_TYPE = z.enum(["release-notes", "blog-post", "announcement-email", "linkedin-post", "sales-one-pager", "faq"]);
+
+/** Consistency check request: brief + messaging + the assets to check. */
+export const consistencyRequest = z.object({
+  brief: briefSchema.extend({ targetDate: z.iso.datetime() }), // past launch days are fine for a check
+  messaging: messagingSchema,
+  assets: z
+    .array(z.object({ id: z.string().max(40), type: ASSET_TYPE, title: z.string().max(200), content: z.string().max(6000) }))
+    .min(1)
+    .max(6),
+});
+
+export const consistencyOutput = z.object({
+  findings: z
+    .array(
+      z.object({
+        assetId: z.string(),
+        severity: z.enum(["high", "medium", "low"]),
+        category: z.enum(["claim", "number", "feature", "tone"]),
+        excerpt: z.string(),
+        briefReference: z.string(),
+        suggestion: z.string(),
+      }),
+    )
+    .max(40),
+});
+
+/** Regenerate one asset from the same brief + messaging block. */
+export const assetRequest = z.object({
+  brief: briefSchema.extend({ targetDate: z.iso.datetime() }),
+  messaging: messagingSchema,
+  type: ASSET_TYPE,
+});

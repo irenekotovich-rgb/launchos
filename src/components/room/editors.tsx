@@ -4,16 +4,25 @@
 // LaunchEditor context; the owner component persists the result. The demo never renders these.
 
 import { createContext, useContext, useEffect, useId, useRef, useState } from "react";
-import { Check, Circle, Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, Circle, Loader2, Pencil, Plus, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
+import { briefKey, regenerateAsset, runConsistencyCheck } from "@/lib/ai-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import * as E from "@/lib/edit";
-import type { AnalysisKey, LaunchDoc, Metric, PhaseKey, Recipient, TeamKey, TeamSignoff } from "@/lib/types";
+import type { AnalysisKey, AssetType, LaunchBrief, LaunchDoc, Metric, PhaseKey, Recipient, TeamKey, TeamSignoff } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Apply = (edit: (doc: LaunchDoc, now: Date) => LaunchDoc) => void;
-const Ctx = createContext<{ doc: LaunchDoc; apply: Apply } | null>(null);
+type AiTask = () => ReturnType<typeof runConsistencyCheck>;
+interface EditorCtx {
+  doc: LaunchDoc;
+  apply: Apply;
+  /** Which AI task is running (one at a time per launch), and how to run one. */
+  aiBusy: string | null;
+  runAi: (key: string, task: AiTask, opts: { staleOnBriefChange: "discard" | "keep-stale" }) => Promise<string | null>;
+}
+const Ctx = createContext<EditorCtx | null>(null);
 
 export function LaunchEditor({ doc, onChange, children }: { doc: LaunchDoc; onChange: (d: LaunchDoc) => void; children: React.ReactNode }) {
   // Edits chain off the latest doc, so two edits in one tick (e.g. blur + click) don't drop one.
@@ -25,7 +34,33 @@ export function LaunchEditor({ doc, onChange, children }: { doc: LaunchDoc; onCh
     latest.current = next;
     onChange(next);
   };
-  return <Ctx.Provider value={{ doc, apply }}>{children}</Ctx.Provider>;
+  const [aiBusy, setAiBusy] = useState<string | null>(null);
+  const mounted = useRef(true);
+  useEffect(() => () => void (mounted.current = false), []);
+  /**
+   * Runs one AI task and applies its result to the *latest* doc. If the brief changed while the
+   * task ran, a check is discarded and a regenerated asset is kept but marked stale.
+   * Resolves to a user-facing message (or null on success).
+   */
+  const runAi: EditorCtx["runAi"] = async (key, task, { staleOnBriefChange }) => {
+    if (aiBusy) return "Another AI task is running — wait for it to finish.";
+    setAiBusy(key);
+    const res = await task();
+    if (!mounted.current) return null;
+    setAiBusy(null);
+    if (!res.ok) return res.message;
+    if (briefKey(latest.current) !== res.brief) {
+      if (staleOnBriefChange === "discard") return "The brief changed while checking — run the check again.";
+      apply((d, now) => {
+        const next = res.edit(d, now);
+        return { ...next, assets: next.assets.map((a) => (a.generatedAt === now.toISOString() ? { ...a, status: "stale" as const } : a)) };
+      });
+      return "Regenerated, but the brief changed meanwhile — it's marked stale.";
+    }
+    apply(res.edit);
+    return null;
+  };
+  return <Ctx.Provider value={{ doc, apply, aiBusy, runAi }}>{children}</Ctx.Provider>;
 }
 
 function useEditor() {
@@ -377,3 +412,94 @@ export function RecipientRemove({ email, name }: { email: string; name: string }
     </button>
   );
 }
+
+const BRIEF_TEXT: Record<"what" | "who" | "whyNow", { label: string; max: number }> = {
+  what: { label: "what ships", max: 400 },
+  who: { label: "who it's for", max: 300 },
+  whyNow: { label: "why now", max: 400 },
+};
+
+export function BriefTextEditor({ field }: { field: keyof typeof BRIEF_TEXT }) {
+  const { doc, apply } = useEditor();
+  const meta = BRIEF_TEXT[field];
+  return (
+    <InlineText
+      value={doc.brief[field]}
+      label={meta.label}
+      maxLength={meta.max}
+      onSave={(t) => t && apply((d, now) => E.editBrief(d, { [field]: t } as Partial<LaunchBrief>, now))}
+    />
+  );
+}
+
+export function ClaimsEditor() {
+  const { doc, apply } = useEditor();
+  return (
+    <InlineText
+      value={doc.brief.claims.join("\n")}
+      label="claims, one per line"
+      maxLength={8 * 300}
+      onSave={(t) => {
+        // Same limits as the brief form/API: up to 8 claims, 300 characters each.
+        const claims = t.split("\n").map((c) => c.trim().slice(0, 300)).filter(Boolean).slice(0, 8);
+        if (claims.length) apply((d, now) => E.editBrief(d, { claims }, now));
+      }}
+    />
+  );
+}
+
+/** Toolbar over the asset kit: run the rubric, generate what's missing. */
+export function AssetActions({ missing }: { missing: { type: AssetType; label: string }[] }) {
+  const { doc, aiBusy, runAi } = useEditor();
+  const [message, setMessage] = useState<string | null>(null);
+  const hasAssets = doc.assets.some((a) => a.content);
+  const go = async (key: string, task: AiTask, mode: "discard" | "keep-stale") => {
+    setMessage(null);
+    setMessage(await runAi(key, task, { staleOnBriefChange: mode }));
+  };
+  return (
+    <div className="mb-4 flex flex-col gap-2">
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" disabled={!hasAssets || aiBusy !== null} onClick={() => go("check", () => runConsistencyCheck(doc), "discard")}>
+          {aiBusy === "check" ? <Loader2 className="animate-spin" aria-hidden /> : <ShieldCheck aria-hidden />} Run consistency check
+        </Button>
+        {missing.map((m) => (
+          <Button key={m.type} size="sm" variant="outline" disabled={aiBusy !== null} onClick={() => go(m.type, () => regenerateAsset(doc, m.type), "keep-stale")}>
+            {aiBusy === m.type ? <Loader2 className="animate-spin" aria-hidden /> : <Plus aria-hidden />} Generate {m.label}
+          </Button>
+        ))}
+      </div>
+      <p className="text-xs text-muted-foreground" aria-live="polite">
+        {aiBusy === "check"
+          ? "Checking every asset against the brief on the fixed rubric…"
+          : aiBusy
+            ? "Generating from the brief and messaging block…"
+            : message ?? "The check compares claims, numbers, feature names and tone with the brief. Same rubric every run; tone notes are advisory."}
+      </p>
+    </div>
+  );
+}
+
+export function RegenerateAsset({ type, title }: { type: AssetType; title: string }) {
+  const { doc, aiBusy, runAi } = useEditor();
+  const [message, setMessage] = useState<string | null>(null);
+  const busy = aiBusy === `regen-${type}`;
+  return (
+    <div className="flex flex-col gap-1">
+      <button
+        type="button"
+        disabled={aiBusy !== null}
+        onClick={async () => {
+          setMessage(null);
+          setMessage(await runAi(`regen-${type}`, () => regenerateAsset(doc, type), { staleOnBriefChange: "keep-stale" }));
+        }}
+        className="inline-flex min-h-8 items-center gap-1 self-start text-xs font-semibold text-primary hover:underline disabled:opacity-60"
+        aria-label={`Regenerate ${title}`}
+      >
+        {busy ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : <RefreshCw className="size-3.5" aria-hidden />} {busy ? "Regenerating…" : "Regenerate from brief"}
+      </button>
+      <p className="text-xs text-warning empty:hidden" aria-live="polite">{message ?? ""}</p>
+    </div>
+  );
+}
+

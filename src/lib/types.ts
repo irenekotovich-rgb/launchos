@@ -30,6 +30,8 @@ export interface Messaging {
   pillars: string[];
   proofPoints: string[];
   avoid: string[];
+  /** Set when the brief was edited after this block was generated: the brief wins until it's refreshed. */
+  stale?: boolean;
 }
 
 // ---------------------------------------------------------------- meta

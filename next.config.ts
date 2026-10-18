@@ -4,6 +4,8 @@ const nextConfig: NextConfig = {
   // Prompts are read with fs at runtime (lib/ai/prompts.ts); make sure they ship with the function.
   outputFileTracingIncludes: {
     "/api/generate": ["./prompts/**/*.md"],
+    "/api/consistency": ["./prompts/**/*.md"],
+    "/api/asset": ["./prompts/**/*.md"],
   },
 };
 

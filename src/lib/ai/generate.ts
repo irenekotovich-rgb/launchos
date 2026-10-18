@@ -28,6 +28,8 @@ export interface GeneratedContent {
 
 /** The brief is user input: fenced so prompts can tell the model to treat it as data only. */
 export function briefAsText(b: LaunchBrief): string {
+  const n = (s: string) => s.replace(/<\/(asset|brief)/gi, "</ $1");
+  b = { ...b, productName: n(b.productName), what: n(b.what), who: n(b.who), whyNow: n(b.whyNow), claims: b.claims.map(n) };
   return [
     "<brief>",
     `Product / feature: ${b.productName}`,
@@ -82,6 +84,27 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
   return out;
 }
 
+/** One asset from the brief + messaging block (used by the full run and by "regenerate"). */
+export async function generateAsset(
+  brief: LaunchBrief,
+  messaging: Messaging,
+  type: AssetType,
+  deadline = Date.now() + 100_000,
+  ranAt = new Date().toISOString(),
+): Promise<{ asset: GeneratedContent["assets"][number]; model: ModelRun }> {
+  const prompt = await loadPrompt(`asset-${type}`);
+  const r = await generateStructured(
+    assetOutput,
+    render(prompt.body, { brief: briefAsText(brief), messaging: messagingAsText(messaging) }),
+    modelChain(),
+    deadline,
+  );
+  return {
+    asset: { type, title: normalizeText(r.object.title), content: normalizeText(r.object.content), modelId: r.modelId },
+    model: { step: "assets", modelId: r.modelId, ranAt, prompt: prompt.name, promptVersion: prompt.version },
+  };
+}
+
 /**
  * Throws GenerationUnavailable only if the tier/messaging step fails on every model —
  * without a messaging block no asset can be generated consistently. Later steps degrade
@@ -100,7 +123,6 @@ export async function generateLaunchContent(brief: z.infer<typeof briefSchema>, 
   const tier = await generateStructured(tierOutput, render(tierPrompt.body, { brief: briefText }), chain, deadline);
   models.push({ step: "tier", modelId: tier.modelId, ranAt, prompt: tierPrompt.name, promptVersion: tierPrompt.version });
   const messaging = tier.object.messaging;
-  const messagingText = messagingAsText(messaging);
 
   const analysisPrompt = await loadPrompt("analysis-draft");
   const analysisTask = generateStructured(analysisOutput, render(analysisPrompt.body, { brief: briefText }), chain, deadline)
@@ -112,11 +134,10 @@ export async function generateLaunchContent(brief: z.infer<typeof briefSchema>, 
 
   const failedAssets: AssetType[] = [];
   const assetsTask = mapLimit(ASSET_TYPES, 2, async (type) => {
-    const prompt = await loadPrompt(`asset-${type}`);
     try {
-      const r = await generateStructured(assetOutput, render(prompt.body, { brief: briefText, messaging: messagingText }), chain, deadline);
-      models.push({ step: "assets", modelId: r.modelId, ranAt, prompt: prompt.name, promptVersion: prompt.version });
-      return { type, title: normalizeText(r.object.title), content: normalizeText(r.object.content), modelId: r.modelId };
+      const r = await generateAsset(brief, messaging, type, deadline, ranAt);
+      models.push(r.model);
+      return r.asset;
     } catch (err) {
       console.warn(`[generate] asset ${type} failed on every model`, err instanceof GenerationUnavailable ? err.attempts : err);
       failedAssets.push(type);

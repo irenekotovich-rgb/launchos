@@ -14,7 +14,7 @@ describe("prompt files", () => {
     it(`${name} has a version and renders with brief + messaging`, async () => {
       const p = await loadPrompt(name);
       expect(p.version).toBeGreaterThan(0);
-      const out = render(p.body, { brief: "BRIEF", messaging: "MESSAGING" });
+      const out = render(p.body, { brief: "BRIEF", messaging: "MESSAGING", assets: "ASSETS" });
       expect(out).toContain("BRIEF");
       expect(out).not.toMatch(/\{\{\w+\}\}/);
     });

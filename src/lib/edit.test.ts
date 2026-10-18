@@ -113,3 +113,64 @@ describe("review PR #8 guards", () => {
     expect(E.checkRecipient(doc, "nope")).toBe("invalid-email");
   });
 });
+
+describe("drift control", () => {
+  const withAssets = () => {
+    const doc = fresh();
+    doc.assets = [
+      { id: "a-faq", type: "faq", title: "FAQ", content: "Q/A", status: "ok", generatedAt: NOW.toISOString(), modelId: "m" },
+      { id: "a-blog-post", type: "blog-post", title: "Blog", content: "Text", status: "draft", generatedAt: NOW.toISOString(), modelId: "m" },
+    ];
+    doc.findings = [{ id: "f", assetId: "a-faq", severity: "high", category: "claim", excerpt: "x", briefReference: "y", suggestion: "z" }];
+    return doc;
+  };
+  const model = { step: "consistency" as const, modelId: "m", ranAt: LATER.toISOString() };
+
+  it("editing the brief flags assets stale, clears findings and logs what changed", () => {
+    const next = E.editBrief(withAssets(), { claims: ["a", "b", "c"] }, LATER);
+    expect(next.assets.every((a) => a.status === "stale")).toBe(true);
+    expect(next.findings).toEqual([]);
+    expect(next.decisions.at(-1)?.text).toBe("Brief edited (claims); 2 assets flagged stale.");
+  });
+  it("an unchanged brief edit is a no-op", () => {
+    const doc = withAssets();
+    expect(E.editBrief(doc, { claims: ["a", "b"] }, LATER)).toBe(doc);
+  });
+  it("consistency: high/medium findings drift an asset, low ones don't", () => {
+    const next = E.applyConsistency(withAssets(), [
+      { id: "1", assetId: "a-faq", severity: "medium", category: "number", excerpt: "", briefReference: "", suggestion: "" },
+      { id: "2", assetId: "a-blog-post", severity: "low", category: "tone", excerpt: "", briefReference: "", suggestion: "" },
+    ], model, LATER);
+    expect(next.assets.map((a) => a.status)).toEqual(["stale", "ok"]);
+    expect(next.meta.models.at(-1)?.step).toBe("consistency");
+    expect(next.decisions.at(-1)?.text).toMatch(/2 findings, 1 asset drifted/);
+  });
+  it("regenerating replaces by type and drops that asset's findings", () => {
+    const next = E.replaceAsset(withAssets(), { type: "faq", title: "FAQ v2", content: "new", modelId: "m2" }, model, LATER);
+    expect(next.assets).toHaveLength(2);
+    expect(next.assets[0]).toMatchObject({ title: "FAQ v2", status: "draft", modelId: "m2" });
+    expect(next.findings).toEqual([]);
+    const added = E.replaceAsset(withAssets(), { type: "linkedin-post", title: "Post", content: "p", modelId: "m" }, model, LATER);
+    expect(added.assets).toHaveLength(3);
+  });
+});
+
+describe("review PR #9: messaging and replace-by-type", async () => {
+  const { messagingOrBrief } = await import("./ai-client");
+  it("a brief edit marks messaging stale and the brief then wins (avoid list kept)", () => {
+    const doc = fresh();
+    doc.messaging = { positioning: "p", pillars: ["x"], proofPoints: ["old claim"], avoid: ["SOC 2"] };
+    doc.assets = [{ id: "a-faq", type: "faq", title: "FAQ", content: "c", status: "ok", generatedAt: null, modelId: null }];
+    expect(messagingOrBrief(doc).proofPoints).toEqual(["old claim"]);
+    const edited = E.editBrief(doc, { claims: ["new claim"] }, LATER);
+    expect(edited.messaging?.stale).toBe(true);
+    expect(messagingOrBrief(edited)).toEqual({ positioning: "w", pillars: [], proofPoints: ["new claim"], avoid: ["SOC 2"] });
+  });
+  it("replaces an imported asset with a different id by type", () => {
+    const doc = fresh();
+    doc.assets = [{ id: "imported-7", type: "faq", title: "FAQ", content: "c", status: "stale", generatedAt: null, modelId: null }];
+    const next = E.replaceAsset(doc, { type: "faq", title: "FAQ", content: "new", modelId: "m" }, { step: "assets", modelId: "m", ranAt: LATER.toISOString() }, LATER);
+    expect(next.assets).toHaveLength(1);
+    expect(next.assets[0]).toMatchObject({ id: "imported-7", content: "new" });
+  });
+});

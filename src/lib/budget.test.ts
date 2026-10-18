@@ -43,3 +43,16 @@ describe("budget guard hardening (review PR #7)", () => {
     spy.mockRestore();
   }, 20_000);
 });
+
+describe("weighted costs (review PR #9)", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it("six regenerations cost one full run", async () => {
+    vi.stubEnv("BLOB_READ_WRITE_TOKEN", "");
+    vi.stubEnv("LAUNCHOS_DAILY_LIVE_RUNS", "1");
+    vi.stubEnv("LAUNCHOS_RUNS_PER_CLIENT_HOUR", "0");
+    const { RUN_COST } = await import("./budget");
+    const day = new Date("2032-03-03T10:00:00Z");
+    for (let i = 0; i < 6; i++) expect((await reserveRun(day, "c", RUN_COST.asset)).allowed).toBe(true);
+    expect((await reserveRun(day, "c", RUN_COST.asset)).allowed).toBe(false);
+  });
+});

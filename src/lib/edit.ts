@@ -3,7 +3,12 @@
 
 import type {
   AnalysisKey,
+  Asset,
+  AssetType,
+  ConsistencyFinding,
   Decision,
+  LaunchBrief,
+  ModelRun,
   LaunchDoc,
   Metric,
   PhaseKey,
@@ -129,3 +134,69 @@ export function removeRecipient(doc: LaunchDoc, email: string, now: Date): Launc
 }
 
 export const isEmail = (s: string) => EMAIL.test(s);
+
+// ---------------------------------------------------------------- brief, consistency, assets
+
+const BRIEF_LABEL: Record<keyof LaunchBrief, string> = {
+  productName: "name",
+  what: "what ships",
+  who: "who it's for",
+  whyNow: "why now",
+  targetDate: "launch day",
+  claims: "claims",
+};
+
+/**
+ * Editing the brief flags every generated asset stale (drift control is the product) and clears
+ * findings, which were judged against the old brief. Re-run the check or regenerate to clear.
+ */
+export function editBrief(doc: LaunchDoc, patch: Partial<LaunchBrief>, now: Date): LaunchDoc {
+  const changed = (Object.keys(patch) as (keyof LaunchBrief)[]).filter(
+    (k) => JSON.stringify(patch[k]) !== JSON.stringify(doc.brief[k]),
+  );
+  if (!changed.length) return doc;
+  const assets = doc.assets.map((a) => (a.content ? { ...a, status: "stale" as const } : a));
+  const flagged = assets.filter((a) => a.status === "stale").length;
+  // The messaging block was derived from the old brief; mark it so checks and regeneration use the brief.
+  const messaging = doc.messaging ? { ...doc.messaging, stale: true } : undefined;
+  const next = { ...doc, brief: { ...doc.brief, ...patch }, assets, findings: [], messaging };
+  return logDecision(
+    next,
+    `Brief edited (${changed.map((k) => BRIEF_LABEL[k]).join(", ")})${flagged ? `; ${flagged} asset${flagged === 1 ? "" : "s"} flagged stale` : ""}.`,
+    now,
+  );
+}
+
+/** Findings replace the previous run; assets with high/medium findings drift, the rest are on brief. */
+export function applyConsistency(doc: LaunchDoc, findings: ConsistencyFinding[], model: ModelRun, now: Date): LaunchDoc {
+  const serious = new Set(findings.filter((f) => f.severity !== "low").map((f) => f.assetId));
+  const assets = doc.assets.map((a) =>
+    a.content && a.status !== "generating" ? { ...a, status: serious.has(a.id) ? ("stale" as const) : ("ok" as const) } : a,
+  );
+  const next = { ...doc, findings, assets, meta: { ...doc.meta, models: [...doc.meta.models, model] } };
+  return logDecision(
+    next,
+    findings.length
+      ? `Consistency check: ${findings.length} finding${findings.length === 1 ? "" : "s"}, ${serious.size} asset${serious.size === 1 ? "" : "s"} drifted from the brief.`
+      : "Consistency check: every asset matches the brief.",
+    now,
+    "LaunchOS",
+  );
+}
+
+/** A regenerated asset replaces the old one by type, starts as a draft and drops its old findings. */
+export function replaceAsset(
+  doc: LaunchDoc,
+  generated: { type: AssetType; title: string; content: string; modelId: string },
+  model: ModelRun,
+  now: Date,
+): LaunchDoc {
+  // Match by type, not id: imported docs may carry different ids.
+  const existing = doc.assets.find((a) => a.type === generated.type);
+  const id = existing?.id ?? `a-${generated.type}`;
+  const asset: Asset = { id, type: generated.type, title: generated.title, content: generated.content, status: "draft", generatedAt: now.toISOString(), modelId: generated.modelId };
+  const exists = Boolean(existing);
+  const assets = exists ? doc.assets.map((a) => (a.id === id ? asset : a)) : [...doc.assets, asset];
+  const next = { ...doc, assets, findings: doc.findings.filter((f) => f.assetId !== id), meta: { ...doc.meta, models: [...doc.meta.models, model] } };
+  return logDecision(next, `${generated.title} ${exists ? "regenerated" : "generated"} from the current brief.`, now, "LaunchOS");
+}

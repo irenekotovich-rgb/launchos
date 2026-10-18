@@ -204,6 +204,7 @@ export function countdown(target: Date, now: Date): Countdown {
 
 export type SectionId =
   | "overview"
+  | "brief"
   | "analysis"
   | "alignment"
   | "plan"
