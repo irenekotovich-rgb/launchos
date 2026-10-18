@@ -2,7 +2,7 @@
 // Not a full schema: it checks what the UI dereferences, so bad data shows a message instead of crashing.
 
 import { LAUNCH_DOC_SCHEMA_VERSION } from "./types";
-import type { LaunchDoc } from "./types";
+import type { Highlight, LaunchDoc } from "./types";
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
 const TEAMS = ["stakeholders", "rnd", "marketing", "sales", "support", "legal"];
@@ -26,4 +26,30 @@ export function isLaunchDoc(v: unknown): v is LaunchDoc {
     isObj(analysis) && isObj(analysis.fields) &&
     Array.isArray(v.checklist) && Array.isArray(v.assets) && Array.isArray(v.findings) && Array.isArray(v.decisions)
   );
+}
+
+/**
+ * Cleans optional, user- or model-authored analysis extras (facts and points) so a malformed file
+ * can't crash the room: keeps at most three well-formed facts and string points per area.
+ */
+export function sanitizeLaunchDoc(doc: LaunchDoc): LaunchDoc {
+  const fields = { ...doc.analysis.fields };
+  for (const [k, f] of Object.entries(fields) as [keyof typeof fields, (typeof fields)[keyof typeof fields]][]) {
+    if (!isObj(f)) continue;
+    const highlights = Array.isArray(f.highlights)
+      ? f.highlights
+          .filter((h): h is NonNullable<typeof h> => isObj(h) && typeof h.value === "string" && typeof h.label === "string")
+          .slice(0, 3)
+          .map((h) => ({
+            value: h.value.slice(0, 40),
+            label: h.label.slice(0, 60),
+            visual: (h.visual === "meter" || h.visual === "trend" ? h.visual : "stat") as Highlight["visual"],
+            ...(typeof h.level === "number" && Number.isFinite(h.level) ? { level: Math.max(0, Math.min(100, h.level)) } : {}),
+            ...(h.trend === "up" || h.trend === "down" || h.trend === "flat" ? { trend: h.trend } : {}),
+          }))
+      : undefined;
+    const points = Array.isArray(f.points) ? f.points.filter((p): p is string => typeof p === "string").slice(0, 8) : undefined;
+    fields[k] = { ...f, text: typeof f.text === "string" ? f.text : "", highlights, points };
+  }
+  return { ...doc, analysis: { ...doc.analysis, fields } };
 }

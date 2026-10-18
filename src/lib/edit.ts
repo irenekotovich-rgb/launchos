@@ -17,7 +17,7 @@ import type {
   TeamKey,
   TeamSignoff,
 } from "./types";
-import { isLaunchDoc } from "./validate";
+import { isLaunchDoc, sanitizeLaunchDoc } from "./validate";
 
 const randomId = (prefix: string) =>
   `${prefix}-${typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID().slice(0, 8) : Math.random().toString(36).slice(2, 10)}`;
@@ -222,7 +222,7 @@ export function prepareImport(raw: unknown, newId: string, now: Date): LaunchDoc
   void _s;
   void _sa;
   const imported: LaunchDoc = { ...doc, meta: { ...meta, id: newId, mode: meta.mode === "demo" ? "demo" : "own", updatedAt: now.toISOString() } };
-  return logDecision(imported, "Launch imported from a JSON file.", now, "LaunchOS");
+  return logDecision(sanitizeLaunchDoc(imported), "Launch imported from a JSON file.", now, "LaunchOS");
 }
 
 /** Edits to the analysis facts or bullets make the field the PMM's own (drops the AI-draft label). */

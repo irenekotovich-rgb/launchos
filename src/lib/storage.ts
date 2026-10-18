@@ -1,7 +1,7 @@
 // Own launches live in this browser only (no database in v1, docs/PRD.md §5).
 // Every access is guarded: storage can be unavailable (private mode, blocked site data).
 
-import { isLaunchDoc } from "./validate";
+import { isLaunchDoc, sanitizeLaunchDoc } from "./validate";
 import type { LaunchDoc } from "./types";
 
 const PREFIX = "launchos:launch:";
@@ -27,7 +27,7 @@ export function loadLaunch(id: string): LoadResult {
   if (raw === null) return { status: "missing" };
   try {
     const parsed: unknown = JSON.parse(raw);
-    return isLaunchDoc(parsed) ? { status: "ok", doc: parsed } : { status: "corrupt", raw };
+    return isLaunchDoc(parsed) ? { status: "ok", doc: sanitizeLaunchDoc(parsed) } : { status: "corrupt", raw };
   } catch {
     return { status: "corrupt", raw };
   }
