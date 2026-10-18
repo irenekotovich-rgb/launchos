@@ -24,3 +24,4 @@
 - 2026-10-18 — Review PR #3: projected launch day now also carries the slip of the most recently closed phase, so a late close stays visible after it closes (was: current phase only).
 - 2026-10-18 — Review PR #3: rollout gate never passes with zero failure metrics; overrides are reported as `overridden`, not as a pass. Signoffs stored as a team-keyed record; rollout increment derived, not stored.
 - 2026-10-18 — Review PR #3: deferred `briefHash`-derived staleness to M3 (consistency checker owns it) and stripping recipients/sign-off names from share links to the share-link PR (M3).
+- 2026-10-18 — shadcn base-nova registry components import the unrelated npm `cn` package; after every `shadcn add`, remove `cn` and point imports at `@/lib/utils`.

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "qa:visual": "node scripts/qa-visual.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "qa:long-inputs": "node scripts/qa-long-inputs.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
