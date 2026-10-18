@@ -15,3 +15,9 @@
 - 2026-10-18 — Vercel Blob store `launchos-share` created as **private**: share links are served by an API route that reads the doc server-side, so blobs are never publicly addressable.
 - 2026-10-18 — `/install-github-app` is unavailable in the VS Code extension: review bot set up manually (Claude GitHub App + `.github/workflows/claude.yml` + repo secret).
 - 2026-10-18 — Review PR #2: keep committing /qa-shots (kickoff "Done" requires them in the repo; PR images link to them). Accepted cost: PNG churn in history.
+- 2026-10-18 — Launch day (`brief.targetDate`) = 100% rollout / GA. The countdown targets it; the 10/30/60% stages run before it.
+- 2026-10-18 — Rollout gate: a stage passes when no failure metric is breached and every failure metric has a reading < 48h old. Success metrics are tracked toward launch day, not used to block stages. "Near threshold" = within 10%.
+- 2026-10-18 — Projected launch day = target date + current phase's slip past its ETA. Simple enough for a stakeholder to verify by hand.
+- 2026-10-18 — Demo dates are shifted at load time so the demo always sits mid-rollout (30% live, 9 days to launch) on any visit; the JSON stays authored against 2026-10-18.
+- 2026-10-18 — Demo recipients use example.com addresses (reserved domain) — no real people or inboxes.
+- 2026-10-18 — Added Vitest for pure launch-status logic (gates, dates, bottlenecks); UI is covered by visual QA instead.

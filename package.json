@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "qa:visual": "node scripts/qa-visual.mjs"
+    "qa:visual": "node scripts/qa-visual.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -31,7 +32,8 @@
     "eslint-config-next": "15.5.28",
     "playwright": "^1.64.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   },
   "description": "Open-source launch room: one URL for the whole product launch.",
   "author": "Iryna Kotovych (https://www.linkedin.com/in/irynakotovych/)",
