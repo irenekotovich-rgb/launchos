@@ -34,7 +34,7 @@ export default async function SharedLaunch({ params }: { params: Promise<{ id: s
           </p>
           <Link href="/new" className="font-semibold underline underline-offset-4">Run your own launch</Link>
         </div>
-        <LaunchRoom doc={doc} now={now} />
+        <LaunchRoom doc={doc} now={now} basePath={`/share/${id}`} />
       </main>
     </>
   );

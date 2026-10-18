@@ -15,7 +15,7 @@ import * as R from "@/lib/rollout-edit";
 import { emailsInSnapshot, exportFileName, SHARE_TTL_DAYS, toExportFile } from "@/lib/share";
 import { setShareInfo } from "@/lib/edit";
 import { fmtDayYear } from "@/lib/format";
-import type { AnalysisKey, AssetType, LaunchBrief, LaunchDoc, Metric, PhaseKey, Recipient, RolloutPercent, TeamKey, TeamSignoff } from "@/lib/types";
+import type { AnalysisKey, AssetType, Highlight, LaunchBrief, LaunchDoc, Metric, PhaseKey, Recipient, RolloutPercent, TeamKey, TeamSignoff } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Apply = (edit: (doc: LaunchDoc, now: Date) => LaunchDoc) => void;
@@ -812,6 +812,74 @@ export function SharePanel() {
         </div>
       )}
       <p className="text-xs text-muted-foreground empty:hidden" aria-live="polite">{message ?? ""}</p>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------- analysis detail
+
+export function AnalysisDetailEditors({ field }: { field: AnalysisKey }) {
+  const { doc, apply } = useEditor();
+  const f = doc.analysis.fields[field];
+  const id = useId();
+  const blank: Highlight = { value: "", label: "", visual: "stat" };
+  const [facts, setFacts] = useState<Highlight[]>(() => [0, 1, 2].map((i) => f.highlights?.[i] ?? blank));
+  const set = (i: number, patch: Partial<Highlight>) => setFacts((all) => all.map((h, j) => (j === i ? { ...h, ...patch } : h)));
+  return (
+    <section aria-label="Edit this analysis" className="surface flex flex-col gap-5 rounded-3xl p-6">
+      <div className="flex flex-col gap-2">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Summary</h2>
+        <AnalysisEditor field={field} label="summary" />
+      </div>
+      <form
+        className="flex flex-col gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          apply((d, now) => E.setAnalysisDetail(d, field, { highlights: facts }, now));
+        }}
+      >
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Three key facts</h2>
+        {facts.map((h, i) => (
+          <div key={i} className="grid gap-2 sm:grid-cols-[8rem_1fr_9rem_6rem]">
+            <label className="sr-only" htmlFor={`${id}-v${i}`}>Fact {i + 1} value</label>
+            <Input id={`${id}-v${i}`} value={h.value} maxLength={20} placeholder="Value" onChange={(e) => set(i, { value: e.target.value })} />
+            <label className="sr-only" htmlFor={`${id}-l${i}`}>Fact {i + 1} label</label>
+            <Input id={`${id}-l${i}`} value={h.label} maxLength={40} placeholder="What it measures" onChange={(e) => set(i, { label: e.target.value })} />
+            <label className="sr-only" htmlFor={`${id}-s${i}`}>Fact {i + 1} visual</label>
+            <select id={`${id}-s${i}`} value={h.visual ?? "stat"} onChange={(e) => set(i, { visual: e.target.value as Highlight["visual"] })} className="h-8 rounded-lg border border-input bg-input/30 px-2 text-sm">
+              <option value="stat">Number</option>
+              <option value="meter">Meter (0–100)</option>
+              <option value="trend">Trend</option>
+            </select>
+            {h.visual === "meter" ? (
+              <>
+                <label className="sr-only" htmlFor={`${id}-m${i}`}>Fact {i + 1} level</label>
+                <Input id={`${id}-m${i}`} inputMode="numeric" value={h.level ?? ""} placeholder="0–100" onChange={(e) => set(i, { level: Number(e.target.value) || 0 })} />
+              </>
+            ) : h.visual === "trend" ? (
+              <>
+                <label className="sr-only" htmlFor={`${id}-t${i}`}>Fact {i + 1} trend</label>
+                <select id={`${id}-t${i}`} value={h.trend ?? "up"} onChange={(e) => set(i, { trend: e.target.value as Highlight["trend"] })} className="h-8 rounded-lg border border-input bg-input/30 px-2 text-sm">
+                  <option value="up">Up</option>
+                  <option value="flat">Flat</option>
+                  <option value="down">Down</option>
+                </select>
+              </>
+            ) : (
+              <span />
+            )}
+          </div>
+        ))}
+        <Button type="submit" size="sm" className="self-start">Save facts</Button>
+      </form>
+      <div className="flex flex-col gap-2">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Evidence & open questions (one per line)</h2>
+        <InlineText
+          value={(f.points ?? []).join("\n")}
+          label="evidence and open questions, one per line"
+          onSave={(t) => apply((d, now) => E.setAnalysisDetail(d, field, { points: t.split("\n") }, now))}
+        />
+      </div>
     </section>
   );
 }
