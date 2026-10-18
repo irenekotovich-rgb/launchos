@@ -7,6 +7,7 @@ import type {
   AssetType,
   ConsistencyFinding,
   Decision,
+  Highlight,
   LaunchBrief,
   ModelRun,
   LaunchDoc,
@@ -222,4 +223,25 @@ export function prepareImport(raw: unknown, newId: string, now: Date): LaunchDoc
   void _sa;
   const imported: LaunchDoc = { ...doc, meta: { ...meta, id: newId, mode: meta.mode === "demo" ? "demo" : "own", updatedAt: now.toISOString() } };
   return logDecision(imported, "Launch imported from a JSON file.", now, "LaunchOS");
+}
+
+/** Edits to the analysis facts or bullets make the field the PMM's own (drops the AI-draft label). */
+export function setAnalysisDetail(
+  doc: LaunchDoc,
+  key: AnalysisKey,
+  patch: { highlights?: Highlight[]; points?: string[] },
+  now: Date,
+): LaunchDoc {
+  const prev = doc.analysis.fields[key];
+  const highlights = patch.highlights?.filter((h) => h.value.trim() && h.label.trim()).slice(0, 3);
+  const points = patch.points?.map((p) => p.trim()).filter(Boolean).slice(0, 8);
+  const next = {
+    ...prev,
+    ...(highlights ? { highlights } : {}),
+    ...(points ? { points } : {}),
+    source: "manual" as const,
+    updatedAt: now.toISOString(),
+  };
+  if (JSON.stringify(next.highlights) === JSON.stringify(prev.highlights) && JSON.stringify(next.points) === JSON.stringify(prev.points)) return doc;
+  return touch({ ...doc, analysis: { ...doc.analysis, fields: { ...doc.analysis.fields, [key]: next } } }, now);
 }

@@ -174,3 +174,17 @@ describe("review PR #9: messaging and replace-by-type", async () => {
     expect(next.assets[0]).toMatchObject({ id: "imported-7", content: "new" });
   });
 });
+
+describe("analysis detail edits", () => {
+  it("keeps three valid facts, trims points, and makes the field manual", () => {
+    const doc = fresh();
+    doc.analysis.fields.context = { text: "t", source: "ai-draft", updatedAt: null, highlights: [], points: [] };
+    const next = E.setAnalysisDetail(doc, "context", {
+      highlights: [{ value: "1", label: "a" }, { value: "", label: "empty" }, { value: "2", label: "b" }, { value: "3", label: "c" }, { value: "4", label: "d" }],
+      points: ["  one ", "", "two"],
+    }, LATER);
+    expect(next.analysis.fields.context.highlights?.map((h) => h.value)).toEqual(["1", "2", "3"]);
+    expect(next.analysis.fields.context.points).toEqual(["one", "two"]);
+    expect(next.analysis.fields.context.source).toBe("manual");
+  });
+});

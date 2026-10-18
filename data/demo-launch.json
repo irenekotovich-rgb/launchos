@@ -5,7 +5,10 @@
     "mode": "demo",
     "createdAt": "2026-09-07T09:00:00.000Z",
     "updatedAt": "2026-10-18T08:30:00.000Z",
-    "author": { "name": "Iryna Kotovych", "url": "https://www.linkedin.com/in/irynakotovych/" },
+    "author": {
+      "name": "Iryna Kotovych",
+      "url": "https://www.linkedin.com/in/irynakotovych/"
+    },
     "models": []
   },
   "brief": {
@@ -27,32 +30,169 @@
       "context": {
         "text": "Launch Service schedules and ships releases for ~2,400 workspaces. Approvals happen outside the product, so the release calendar shows 'scheduled' while the real decision sits in Slack. Beta: 38 workspaces since July.",
         "source": "manual",
-        "updatedAt": "2026-09-08T10:00:00.000Z"
+        "updatedAt": "2026-09-08T10:00:00.000Z",
+        "highlights": [
+          {
+            "value": "2,400",
+            "label": "workspaces on Launch Service",
+            "visual": "stat"
+          },
+          {
+            "value": "38",
+            "label": "beta workspaces since July",
+            "visual": "trend",
+            "trend": "up"
+          },
+          {
+            "value": "0%",
+            "label": "approvals inside the product",
+            "visual": "meter",
+            "level": 0
+          }
+        ],
+        "points": [
+          "Releases are scheduled in Launch Service, but approval decisions happen in Slack and spreadsheets.",
+          "The calendar shows 'scheduled' while the real go/no-go sits elsewhere — no single source of truth.",
+          "38 beta workspaces have used Approval Workflows since July; 31 still use it weekly."
+        ]
       },
       "environment": {
         "text": "Compliance pressure is rising: SOC 2 and ISO 27001 auditors now ask for release approval evidence. Budgets are flat, so buyers favour features inside the plan they already pay for over new tools.",
         "source": "manual",
-        "updatedAt": "2026-09-09T10:00:00.000Z"
+        "updatedAt": "2026-09-09T10:00:00.000Z",
+        "highlights": [
+          {
+            "value": "SOC 2",
+            "label": "auditors ask for approval evidence",
+            "visual": "stat"
+          },
+          {
+            "value": "Q1",
+            "label": "mid-market renewals land",
+            "visual": "stat"
+          },
+          {
+            "value": "Flat",
+            "label": "software budgets",
+            "visual": "trend",
+            "trend": "flat"
+          }
+        ],
+        "points": [
+          "SOC 2 and ISO 27001 auditors now request release-approval evidence.",
+          "Most mid-market SOC 2 renewals land in Q1 — the launch must ship before them.",
+          "Flat budgets favour features inside the current plan over new tools."
+        ]
       },
       "competitors": {
         "text": "Two release-management competitors ship approvals as a paid add-on; CI platforms offer manual gates without an audit view for non-engineers. Our angle: approvals where release managers already plan, included in Business.",
         "source": "manual",
-        "updatedAt": "2026-09-10T10:00:00.000Z"
+        "updatedAt": "2026-09-10T10:00:00.000Z",
+        "highlights": [
+          {
+            "value": "2 of 2",
+            "label": "rivals charge for approvals",
+            "visual": "meter",
+            "level": 100
+          },
+          {
+            "value": "0",
+            "label": "CI tools with an audit view",
+            "visual": "stat"
+          },
+          {
+            "value": "$0",
+            "label": "extra cost in Business (our angle)",
+            "visual": "stat"
+          }
+        ],
+        "points": [
+          "Both direct release-management competitors sell approvals as a paid add-on.",
+          "CI platforms offer manual gates but no audit view a non-engineer can use.",
+          "Positioning: approvals where release managers already plan — included in Business."
+        ]
       },
       "economics": {
-        "text": "Goal is retention and Team → Business upgrades, not a new SKU. Model: if 40 Team workspaces upgrade in the first 60 days, the feature pays back its build cost in two quarters.",
+        "text": "Goal is retention and Team → Business upgrades, not a new SKU. Model: if 40 Team workspaces upgrade in the first 60 days, the feature pays back its build cost in about six months.",
         "source": "manual",
-        "updatedAt": "2026-09-11T10:00:00.000Z"
+        "updatedAt": "2026-09-11T10:00:00.000Z",
+        "highlights": [
+          {
+            "value": "40",
+            "label": "Team → Business upgrades target",
+            "visual": "stat"
+          },
+          {
+            "value": "60 days",
+            "label": "to hit the target",
+            "visual": "stat"
+          },
+          {
+            "value": "6 mo",
+            "label": "payback on build cost",
+            "visual": "stat"
+          }
+        ],
+        "points": [
+          "Goal: retention and upgrades, not a new SKU.",
+          "If 40 Team workspaces upgrade within 60 days, the build pays back in about six months.",
+          "Churn reduction is upside not counted in the payback model."
+        ]
       },
       "capacity": {
         "text": "R&D: one squad (5 engineers) through GA, then 1 engineer on fixes. Marketing: PMM 50% for 6 weeks. Support: 2 agents trained before 30% rollout. No paid campaign budget.",
         "source": "manual",
-        "updatedAt": "2026-09-12T10:00:00.000Z"
+        "updatedAt": "2026-09-12T10:00:00.000Z",
+        "highlights": [
+          {
+            "value": "5",
+            "label": "engineers through GA",
+            "visual": "stat"
+          },
+          {
+            "value": "50%",
+            "label": "PMM time for 6 weeks",
+            "visual": "meter",
+            "level": 50
+          },
+          {
+            "value": "2",
+            "label": "support agents trained",
+            "visual": "stat"
+          }
+        ],
+        "points": [
+          "R&D: one squad of five engineers through GA, then one engineer on fixes.",
+          "Marketing: PMM at 50% for six weeks; no paid campaign budget.",
+          "Support: two agents trained before the 30% stage."
+        ]
       },
       "audience": {
         "text": "Primary: release managers at Business and Team plan workspaces with 3+ releases a week. Secondary: compliance leads who need the audit export. Excluded: Free plan.",
         "source": "manual",
-        "updatedAt": "2026-09-13T10:00:00.000Z"
+        "updatedAt": "2026-09-13T10:00:00.000Z",
+        "highlights": [
+          {
+            "value": "3+",
+            "label": "releases per week (primary)",
+            "visual": "stat"
+          },
+          {
+            "value": "2",
+            "label": "plans in scope: Business, Team",
+            "visual": "stat"
+          },
+          {
+            "value": "Free",
+            "label": "excluded",
+            "visual": "stat"
+          }
+        ],
+        "points": [
+          "Primary: release managers in Business and Team workspaces shipping 3+ releases a week.",
+          "Secondary: compliance leads who need the audit export.",
+          "Excluded: Free plan workspaces."
+        ]
       }
     }
   },
@@ -60,20 +200,98 @@
     "problem": "Release approvals happen outside Launch Service, leaving no audit trail and slowing releases while people chase sign-off in Slack.",
     "forWhom": "Release managers and engineering leads at mid-market SaaS companies with compliance obligations.",
     "metrics": [
-      { "id": "s-adoption", "kind": "success", "name": "Workspaces with an active approval workflow", "unit": "%", "direction": "above", "threshold": 15, "owner": "Maya Chen (PM)" },
-      { "id": "s-approval-time", "kind": "success", "name": "Median release approval time", "unit": "h", "direction": "below", "threshold": 4, "owner": "Maya Chen (PM)" },
-      { "id": "s-upgrades", "kind": "success", "name": "Team → Business upgrades citing approvals", "unit": "workspaces", "direction": "above", "threshold": 40, "owner": "Daniel Okafor (Sales)" },
-      { "id": "f-tickets", "kind": "failure", "name": "Approval support tickets per 1k workspaces", "unit": "tickets", "direction": "above", "threshold": 12, "owner": "Priya Nair (Support)" },
-      { "id": "f-rollbacks", "kind": "failure", "name": "Releases rolled back due to approval bugs", "unit": "%", "direction": "above", "threshold": 2, "owner": "Tomás Ruiz (R&D)" },
-      { "id": "f-latency", "kind": "failure", "name": "p95 release calendar load time", "unit": "ms", "direction": "above", "threshold": 1500, "owner": "Tomás Ruiz (R&D)" }
+      {
+        "id": "s-adoption",
+        "kind": "success",
+        "name": "Workspaces with an active approval workflow",
+        "unit": "%",
+        "direction": "above",
+        "threshold": 15,
+        "owner": "Maya Chen (PM)"
+      },
+      {
+        "id": "s-approval-time",
+        "kind": "success",
+        "name": "Median release approval time",
+        "unit": "h",
+        "direction": "below",
+        "threshold": 4,
+        "owner": "Maya Chen (PM)"
+      },
+      {
+        "id": "s-upgrades",
+        "kind": "success",
+        "name": "Team → Business upgrades citing approvals",
+        "unit": "workspaces",
+        "direction": "above",
+        "threshold": 40,
+        "owner": "Daniel Okafor (Sales)"
+      },
+      {
+        "id": "f-tickets",
+        "kind": "failure",
+        "name": "Approval support tickets per 1k workspaces",
+        "unit": "tickets",
+        "direction": "above",
+        "threshold": 12,
+        "owner": "Priya Nair (Support)"
+      },
+      {
+        "id": "f-rollbacks",
+        "kind": "failure",
+        "name": "Releases rolled back due to approval bugs",
+        "unit": "%",
+        "direction": "above",
+        "threshold": 2,
+        "owner": "Tomás Ruiz (R&D)"
+      },
+      {
+        "id": "f-latency",
+        "kind": "failure",
+        "name": "p95 release calendar load time",
+        "unit": "ms",
+        "direction": "above",
+        "threshold": 1500,
+        "owner": "Tomás Ruiz (R&D)"
+      }
     ],
     "signoffs": {
-      "stakeholders": { "lead": "Elena Varga (VP Product)", "status": "signed", "note": "Go, provided the audit export ships at GA.", "signedAt": "2026-09-22T15:00:00.000Z" },
-      "rnd": { "lead": "Tomás Ruiz", "status": "signed", "note": "Latency threshold agreed after load test.", "signedAt": "2026-09-23T11:00:00.000Z" },
-      "marketing": { "lead": "Sofia Lindqvist", "status": "signed", "note": "", "signedAt": "2026-09-23T14:00:00.000Z" },
-      "sales": { "lead": "Daniel Okafor", "status": "signed", "note": "Upgrade target owned by Sales, reviewed weekly.", "signedAt": "2026-09-24T10:00:00.000Z" },
-      "support": { "lead": "Priya Nair", "status": "signed", "note": "Ticket threshold is per 1k active workspaces, not total.", "signedAt": "2026-09-24T12:00:00.000Z" },
-      "legal": { "lead": "Hannah Brooks", "status": "signed", "note": "'Audit trail' is fine; do not say 'SOC 2 compliant'.", "signedAt": "2026-09-25T09:00:00.000Z" }
+      "stakeholders": {
+        "lead": "Elena Varga (VP Product)",
+        "status": "signed",
+        "note": "Go, provided the audit export ships at GA.",
+        "signedAt": "2026-09-22T15:00:00.000Z"
+      },
+      "rnd": {
+        "lead": "Tomás Ruiz",
+        "status": "signed",
+        "note": "Latency threshold agreed after load test.",
+        "signedAt": "2026-09-23T11:00:00.000Z"
+      },
+      "marketing": {
+        "lead": "Sofia Lindqvist",
+        "status": "signed",
+        "note": "",
+        "signedAt": "2026-09-23T14:00:00.000Z"
+      },
+      "sales": {
+        "lead": "Daniel Okafor",
+        "status": "signed",
+        "note": "Upgrade target owned by Sales, reviewed weekly.",
+        "signedAt": "2026-09-24T10:00:00.000Z"
+      },
+      "support": {
+        "lead": "Priya Nair",
+        "status": "signed",
+        "note": "Ticket threshold is per 1k active workspaces, not total.",
+        "signedAt": "2026-09-24T12:00:00.000Z"
+      },
+      "legal": {
+        "lead": "Hannah Brooks",
+        "status": "signed",
+        "note": "'Audit trail' is fine; do not say 'SOC 2 compliant'.",
+        "signedAt": "2026-09-25T09:00:00.000Z"
+      }
     },
     "lockedAt": "2026-09-25T09:30:00.000Z"
   },
@@ -83,130 +301,396 @@
     "overrideDecisionId": null
   },
   "phases": [
-    { "key": "analysis", "name": "Analysis", "start": "2026-09-07T09:00:00.000Z", "eta": "2026-09-14T17:00:00.000Z", "completedAt": "2026-09-13T16:00:00.000Z", "gate": "Six analysis fields filled and reviewed by the PMM" },
-    { "key": "alignment", "name": "Problem & metrics alignment", "start": "2026-09-14T09:00:00.000Z", "eta": "2026-09-24T17:00:00.000Z", "completedAt": "2026-09-25T09:30:00.000Z", "gate": "All six teams signed off on problem and metrics" },
-    { "key": "brief", "name": "Brief & messaging", "start": "2026-09-25T09:00:00.000Z", "eta": "2026-09-29T17:00:00.000Z", "completedAt": "2026-09-29T12:00:00.000Z", "gate": "Brief locked, claims approved by Legal" },
-    { "key": "assets", "name": "Asset kit", "start": "2026-09-29T09:00:00.000Z", "eta": "2026-10-08T17:00:00.000Z", "completedAt": "2026-10-09T15:00:00.000Z", "gate": "Six assets reviewed, no high-severity consistency findings" },
-    { "key": "readiness", "name": "Readiness", "start": "2026-10-06T09:00:00.000Z", "eta": "2026-10-13T09:00:00.000Z", "completedAt": "2026-10-13T08:00:00.000Z", "gate": "Readiness checklist complete" },
-    { "key": "rollout", "name": "Staged rollout", "start": "2026-10-13T09:00:00.000Z", "eta": "2026-10-27T09:00:00.000Z", "completedAt": null, "gate": "No failure metric breached at each stage; 100% by launch day" }
+    {
+      "key": "analysis",
+      "name": "Analysis",
+      "start": "2026-09-07T09:00:00.000Z",
+      "eta": "2026-09-14T17:00:00.000Z",
+      "completedAt": "2026-09-13T16:00:00.000Z",
+      "gate": "Six analysis fields filled and reviewed by the PMM"
+    },
+    {
+      "key": "alignment",
+      "name": "Problem & metrics alignment",
+      "start": "2026-09-14T09:00:00.000Z",
+      "eta": "2026-09-24T17:00:00.000Z",
+      "completedAt": "2026-09-25T09:30:00.000Z",
+      "gate": "All six teams signed off on problem and metrics"
+    },
+    {
+      "key": "brief",
+      "name": "Brief & messaging",
+      "start": "2026-09-25T09:00:00.000Z",
+      "eta": "2026-09-29T17:00:00.000Z",
+      "completedAt": "2026-09-29T12:00:00.000Z",
+      "gate": "Brief locked, claims approved by Legal"
+    },
+    {
+      "key": "assets",
+      "name": "Asset kit",
+      "start": "2026-09-29T09:00:00.000Z",
+      "eta": "2026-10-08T17:00:00.000Z",
+      "completedAt": "2026-10-09T15:00:00.000Z",
+      "gate": "Six assets reviewed, no high-severity consistency findings"
+    },
+    {
+      "key": "readiness",
+      "name": "Readiness",
+      "start": "2026-10-06T09:00:00.000Z",
+      "eta": "2026-10-13T09:00:00.000Z",
+      "completedAt": "2026-10-13T08:00:00.000Z",
+      "gate": "Readiness checklist complete"
+    },
+    {
+      "key": "rollout",
+      "name": "Staged rollout",
+      "start": "2026-10-13T09:00:00.000Z",
+      "eta": "2026-10-27T09:00:00.000Z",
+      "completedAt": null,
+      "gate": "No failure metric breached at each stage; 100% by launch day"
+    }
   ],
   "checklist": [
-    { "id": "c1", "phase": "analysis", "label": "Competitor scan written down", "owner": "PMM", "done": true, "note": "" },
-    { "id": "c2", "phase": "alignment", "label": "Success and failure metrics have owners and thresholds", "owner": "PMM", "done": true, "note": "" },
-    { "id": "c3", "phase": "brief", "label": "Claims approved by Legal", "owner": "Legal", "done": true, "note": "Removed 'SOC 2 compliant' wording." },
-    { "id": "c4", "phase": "assets", "label": "Help center article published (hidden until 100%)", "owner": "Support", "done": true, "note": "" },
-    { "id": "c5", "phase": "readiness", "label": "Feature flag rollout plan reviewed by R&D", "owner": "R&D", "done": true, "note": "" },
-    { "id": "c6", "phase": "readiness", "label": "Sales trained on Business-plan positioning", "owner": "Sales", "done": true, "note": "" },
-    { "id": "c7", "phase": "readiness", "label": "Dashboards for all six metrics live", "owner": "R&D", "done": true, "note": "" },
-    { "id": "c8", "phase": "rollout", "label": "Support macros for approval errors", "owner": "Support", "done": false, "note": "Needed before 60%: ticket volume is rising." },
-    { "id": "c9", "phase": "rollout", "label": "Audit export verified with two compliance leads", "owner": "PM", "done": false, "note": "" },
-    { "id": "c10", "phase": "rollout", "label": "Announcement email scheduled for launch day", "owner": "Marketing", "done": false, "note": "" }
+    {
+      "id": "c1",
+      "phase": "analysis",
+      "label": "Competitor scan written down",
+      "owner": "PMM",
+      "done": true,
+      "note": ""
+    },
+    {
+      "id": "c2",
+      "phase": "alignment",
+      "label": "Success and failure metrics have owners and thresholds",
+      "owner": "PMM",
+      "done": true,
+      "note": ""
+    },
+    {
+      "id": "c3",
+      "phase": "brief",
+      "label": "Claims approved by Legal",
+      "owner": "Legal",
+      "done": true,
+      "note": "Removed 'SOC 2 compliant' wording."
+    },
+    {
+      "id": "c4",
+      "phase": "assets",
+      "label": "Help center article published (hidden until 100%)",
+      "owner": "Support",
+      "done": true,
+      "note": ""
+    },
+    {
+      "id": "c5",
+      "phase": "readiness",
+      "label": "Feature flag rollout plan reviewed by R&D",
+      "owner": "R&D",
+      "done": true,
+      "note": ""
+    },
+    {
+      "id": "c6",
+      "phase": "readiness",
+      "label": "Sales trained on Business-plan positioning",
+      "owner": "Sales",
+      "done": true,
+      "note": ""
+    },
+    {
+      "id": "c7",
+      "phase": "readiness",
+      "label": "Dashboards for all six metrics live",
+      "owner": "R&D",
+      "done": true,
+      "note": ""
+    },
+    {
+      "id": "c8",
+      "phase": "rollout",
+      "label": "Support macros for approval errors",
+      "owner": "Support",
+      "done": false,
+      "note": "Needed before 60%: ticket volume is rising."
+    },
+    {
+      "id": "c9",
+      "phase": "rollout",
+      "label": "Audit export verified with two compliance leads",
+      "owner": "PM",
+      "done": false,
+      "note": ""
+    },
+    {
+      "id": "c10",
+      "phase": "rollout",
+      "label": "Announcement email scheduled for launch day",
+      "owner": "Marketing",
+      "done": false,
+      "note": ""
+    }
   ],
   "rollout": {
     "stages": [
       {
-        "cumulative": 10, "status": "complete",
-        "plannedStart": "2026-10-13T09:00:00.000Z", "startedAt": "2026-10-13T09:00:00.000Z", "completedAt": "2026-10-16T09:00:00.000Z",
+        "cumulative": 10,
+        "status": "complete",
+        "plannedStart": "2026-10-13T09:00:00.000Z",
+        "startedAt": "2026-10-13T09:00:00.000Z",
+        "completedAt": "2026-10-16T09:00:00.000Z",
         "readings": [
-          { "metricId": "s-adoption", "value": 9.5, "recordedAt": "2026-10-16T08:00:00.000Z" },
-          { "metricId": "s-approval-time", "value": 5.1, "recordedAt": "2026-10-16T08:00:00.000Z" },
-          { "metricId": "s-upgrades", "value": 6, "recordedAt": "2026-10-16T08:00:00.000Z" },
-          { "metricId": "f-tickets", "value": 6.2, "recordedAt": "2026-10-16T08:00:00.000Z" },
-          { "metricId": "f-rollbacks", "value": 0.4, "recordedAt": "2026-10-16T08:00:00.000Z" },
-          { "metricId": "f-latency", "value": 980, "recordedAt": "2026-10-16T08:00:00.000Z" }
+          {
+            "metricId": "s-adoption",
+            "value": 9.5,
+            "recordedAt": "2026-10-16T08:00:00.000Z"
+          },
+          {
+            "metricId": "s-approval-time",
+            "value": 5.1,
+            "recordedAt": "2026-10-16T08:00:00.000Z"
+          },
+          {
+            "metricId": "s-upgrades",
+            "value": 6,
+            "recordedAt": "2026-10-16T08:00:00.000Z"
+          },
+          {
+            "metricId": "f-tickets",
+            "value": 6.2,
+            "recordedAt": "2026-10-16T08:00:00.000Z"
+          },
+          {
+            "metricId": "f-rollbacks",
+            "value": 0.4,
+            "recordedAt": "2026-10-16T08:00:00.000Z"
+          },
+          {
+            "metricId": "f-latency",
+            "value": 980,
+            "recordedAt": "2026-10-16T08:00:00.000Z"
+          }
         ],
-        "notifiedAt": "2026-10-16T09:15:00.000Z", "overrideDecisionId": null
+        "notifiedAt": "2026-10-16T09:15:00.000Z",
+        "overrideDecisionId": null
       },
       {
-        "cumulative": 30, "status": "live",
-        "plannedStart": "2026-10-16T09:00:00.000Z", "startedAt": "2026-10-16T09:30:00.000Z", "completedAt": null,
+        "cumulative": 30,
+        "status": "live",
+        "plannedStart": "2026-10-16T09:00:00.000Z",
+        "startedAt": "2026-10-16T09:30:00.000Z",
+        "completedAt": null,
         "readings": [
-          { "metricId": "s-adoption", "value": 13.2, "recordedAt": "2026-10-18T08:00:00.000Z" },
-          { "metricId": "s-approval-time", "value": 4.3, "recordedAt": "2026-10-18T08:00:00.000Z" },
-          { "metricId": "s-upgrades", "value": 17, "recordedAt": "2026-10-18T08:00:00.000Z" },
-          { "metricId": "f-tickets", "value": 10.8, "recordedAt": "2026-10-18T08:00:00.000Z" },
-          { "metricId": "f-rollbacks", "value": 0.6, "recordedAt": "2026-10-18T08:00:00.000Z" },
-          { "metricId": "f-latency", "value": 1120, "recordedAt": "2026-10-18T08:00:00.000Z" }
+          {
+            "metricId": "s-adoption",
+            "value": 13.2,
+            "recordedAt": "2026-10-18T08:00:00.000Z"
+          },
+          {
+            "metricId": "s-approval-time",
+            "value": 4.3,
+            "recordedAt": "2026-10-18T08:00:00.000Z"
+          },
+          {
+            "metricId": "s-upgrades",
+            "value": 17,
+            "recordedAt": "2026-10-18T08:00:00.000Z"
+          },
+          {
+            "metricId": "f-tickets",
+            "value": 10.8,
+            "recordedAt": "2026-10-18T08:00:00.000Z"
+          },
+          {
+            "metricId": "f-rollbacks",
+            "value": 0.6,
+            "recordedAt": "2026-10-18T08:00:00.000Z"
+          },
+          {
+            "metricId": "f-latency",
+            "value": 1120,
+            "recordedAt": "2026-10-18T08:00:00.000Z"
+          }
         ],
-        "notifiedAt": null, "overrideDecisionId": null
+        "notifiedAt": null,
+        "overrideDecisionId": null
       },
       {
-        "cumulative": 60, "status": "not-started",
-        "plannedStart": "2026-10-21T09:00:00.000Z", "startedAt": null, "completedAt": null,
-        "readings": [], "notifiedAt": null, "overrideDecisionId": null
+        "cumulative": 60,
+        "status": "not-started",
+        "plannedStart": "2026-10-21T09:00:00.000Z",
+        "startedAt": null,
+        "completedAt": null,
+        "readings": [],
+        "notifiedAt": null,
+        "overrideDecisionId": null
       },
       {
-        "cumulative": 100, "status": "not-started",
-        "plannedStart": "2026-10-27T09:00:00.000Z", "startedAt": null, "completedAt": null,
-        "readings": [], "notifiedAt": null, "overrideDecisionId": null
+        "cumulative": 100,
+        "status": "not-started",
+        "plannedStart": "2026-10-27T09:00:00.000Z",
+        "startedAt": null,
+        "completedAt": null,
+        "readings": [],
+        "notifiedAt": null,
+        "overrideDecisionId": null
       }
     ],
     "recipients": [
-      { "name": "Elena Varga", "role": "VP Product", "email": "elena.varga@example.com", "group": "stakeholder" },
-      { "name": "Marcus Hale", "role": "CEO", "email": "marcus.hale@example.com", "group": "stakeholder" },
-      { "name": "Tomás Ruiz", "role": "Engineering lead", "email": "tomas.ruiz@example.com", "group": "team-lead" },
-      { "name": "Sofia Lindqvist", "role": "Marketing lead", "email": "sofia.lindqvist@example.com", "group": "team-lead" },
-      { "name": "Daniel Okafor", "role": "Sales lead", "email": "daniel.okafor@example.com", "group": "team-lead" },
-      { "name": "Priya Nair", "role": "Support lead", "email": "priya.nair@example.com", "group": "team-lead" },
-      { "name": "Hannah Brooks", "role": "Legal counsel", "email": "hannah.brooks@example.com", "group": "team-lead" }
+      {
+        "name": "Elena Varga",
+        "role": "VP Product",
+        "email": "elena.varga@example.com",
+        "group": "stakeholder"
+      },
+      {
+        "name": "Marcus Hale",
+        "role": "CEO",
+        "email": "marcus.hale@example.com",
+        "group": "stakeholder"
+      },
+      {
+        "name": "Tomás Ruiz",
+        "role": "Engineering lead",
+        "email": "tomas.ruiz@example.com",
+        "group": "team-lead"
+      },
+      {
+        "name": "Sofia Lindqvist",
+        "role": "Marketing lead",
+        "email": "sofia.lindqvist@example.com",
+        "group": "team-lead"
+      },
+      {
+        "name": "Daniel Okafor",
+        "role": "Sales lead",
+        "email": "daniel.okafor@example.com",
+        "group": "team-lead"
+      },
+      {
+        "name": "Priya Nair",
+        "role": "Support lead",
+        "email": "priya.nair@example.com",
+        "group": "team-lead"
+      },
+      {
+        "name": "Hannah Brooks",
+        "role": "Legal counsel",
+        "email": "hannah.brooks@example.com",
+        "group": "team-lead"
+      }
     ]
   },
   "assets": [
     {
-      "id": "a-release-notes", "type": "release-notes", "title": "Release notes", "status": "ok",
+      "id": "a-release-notes",
+      "type": "release-notes",
+      "title": "Release notes",
+      "status": "ok",
       "content": "New: Approval Workflows. Add named approvers and required checks to any release in the calendar. Approvers get a one-click approve link in the app and by email, and every decision is recorded in the release's audit trail with who approved, when, and which checks passed. Available on the Business plan.",
-      "generatedAt": "2026-10-01T10:00:00.000Z", "modelId": null
+      "generatedAt": "2026-10-01T10:00:00.000Z",
+      "modelId": null
     },
     {
-      "id": "a-blog-post", "type": "blog-post", "title": "Blog post: Approvals belong where releases are planned", "status": "ok",
+      "id": "a-blog-post",
+      "type": "blog-post",
+      "title": "Blog post: Approvals belong where releases are planned",
+      "status": "ok",
       "content": "Most release approvals still happen in a Slack thread that nobody can find during an audit. Approval Workflows moves that decision into the Launch Service release calendar: pick approvers, require the checks that matter, and approve in one click. In beta, median approval time fell below four hours, and every approval left an audit trail behind. Approval Workflows is included in the Business plan.",
-      "generatedAt": "2026-10-01T10:05:00.000Z", "modelId": null
+      "generatedAt": "2026-10-01T10:05:00.000Z",
+      "modelId": null
     },
     {
-      "id": "a-email", "type": "announcement-email", "title": "Announcement email", "status": "ok",
+      "id": "a-email",
+      "type": "announcement-email",
+      "title": "Announcement email",
+      "status": "ok",
       "content": "Subject: Approve releases in one click — with a trail auditors love\n\nHi {first_name}, releases in your calendar can now require approval from named people, with the checks you choose. Approvers get a one-click link, and every decision is logged automatically. It's part of your Business plan today — open any release to add your first workflow.",
-      "generatedAt": "2026-10-01T10:10:00.000Z", "modelId": null
+      "generatedAt": "2026-10-01T10:10:00.000Z",
+      "modelId": null
     },
     {
-      "id": "a-linkedin", "type": "linkedin-post", "title": "LinkedIn post", "status": "draft",
+      "id": "a-linkedin",
+      "type": "linkedin-post",
+      "title": "LinkedIn post",
+      "status": "draft",
       "content": "Your release was approved. Where's the proof? Approval Workflows in Launch Service puts approvers, required checks and a full audit trail right on the release calendar. One click to approve. Zero screenshots of Slack for your auditor. Included in Business.",
-      "generatedAt": "2026-10-01T10:15:00.000Z", "modelId": null
+      "generatedAt": "2026-10-01T10:15:00.000Z",
+      "modelId": null
     },
     {
-      "id": "a-one-pager", "type": "sales-one-pager", "title": "Sales one-pager", "status": "stale",
+      "id": "a-one-pager",
+      "type": "sales-one-pager",
+      "title": "Sales one-pager",
+      "status": "stale",
       "content": "Approval Workflows — the audit-ready way to ship. Named approvers, required checks, one-click approval, full audit trail. Cuts approval time by 70%. Makes your release process SOC 2 compliant. Available as a $15/seat add-on for Team and Business plans.",
-      "generatedAt": "2026-10-01T10:20:00.000Z", "modelId": null
+      "generatedAt": "2026-10-01T10:20:00.000Z",
+      "modelId": null
     },
     {
-      "id": "a-faq", "type": "faq", "title": "FAQ", "status": "ok",
+      "id": "a-faq",
+      "type": "faq",
+      "title": "FAQ",
+      "status": "ok",
       "content": "Which plans include Approval Workflows? Business, at no extra cost.\nCan an approver approve from email? Yes, with a one-click link that expires after 72 hours.\nWhat does the audit trail record? Who approved, when, and which required checks had passed at that moment.\nCan I export the audit trail? Yes, as CSV from the release history.",
-      "generatedAt": "2026-10-01T10:25:00.000Z", "modelId": null
+      "generatedAt": "2026-10-01T10:25:00.000Z",
+      "modelId": null
     }
   ],
   "findings": [
     {
-      "id": "f1", "assetId": "a-one-pager", "severity": "high", "category": "claim",
+      "id": "f1",
+      "assetId": "a-one-pager",
+      "severity": "high",
+      "category": "claim",
       "excerpt": "Makes your release process SOC 2 compliant.",
       "briefReference": "Legal sign-off: do not say 'SOC 2 compliant'; claim is 'every approval is logged'.",
       "suggestion": "Replace with: 'Every approval is logged with who, when and which checks passed — evidence your auditor can export.'"
     },
     {
-      "id": "f2", "assetId": "a-one-pager", "severity": "high", "category": "number",
+      "id": "f2",
+      "assetId": "a-one-pager",
+      "severity": "high",
+      "category": "number",
       "excerpt": "Available as a $15/seat add-on for Team and Business plans.",
       "briefReference": "Claim: 'Included in the Business plan at no extra cost'.",
       "suggestion": "Replace with: 'Included in the Business plan at no extra cost.'"
     },
     {
-      "id": "f3", "assetId": "a-one-pager", "severity": "medium", "category": "number",
+      "id": "f3",
+      "assetId": "a-one-pager",
+      "severity": "medium",
+      "category": "number",
       "excerpt": "Cuts approval time by 70%.",
       "briefReference": "Claim: 'Median approval time drops below 4 hours in beta workspaces'.",
       "suggestion": "Use the briefed number: 'Median approval time below 4 hours in beta.'"
     }
   ],
   "decisions": [
-    { "id": "d1", "date": "2026-09-14T10:00:00.000Z", "text": "Tier set to T2: existing buyers, packaging change, no pricing change.", "author": "PMM" },
-    { "id": "d2", "date": "2026-09-25T09:30:00.000Z", "text": "Alignment locked; Legal asked to drop 'SOC 2 compliant' everywhere.", "author": "PMM" },
-    { "id": "d3", "date": "2026-10-09T15:00:00.000Z", "text": "Pricing changed from paid add-on to included in Business; brief updated, one-pager flagged stale.", "author": "PMM" },
-    { "id": "d4", "date": "2026-10-16T09:00:00.000Z", "text": "10% stage complete, no failure metric breached; opened 30%.", "author": "PMM" }
+    {
+      "id": "d1",
+      "date": "2026-09-14T10:00:00.000Z",
+      "text": "Tier set to T2: existing buyers, packaging change, no pricing change.",
+      "author": "PMM"
+    },
+    {
+      "id": "d2",
+      "date": "2026-09-25T09:30:00.000Z",
+      "text": "Alignment locked; Legal asked to drop 'SOC 2 compliant' everywhere.",
+      "author": "PMM"
+    },
+    {
+      "id": "d3",
+      "date": "2026-10-09T15:00:00.000Z",
+      "text": "Pricing changed from paid add-on to included in Business; brief updated, one-pager flagged stale.",
+      "author": "PMM"
+    },
+    {
+      "id": "d4",
+      "date": "2026-10-16T09:00:00.000Z",
+      "text": "10% stage complete, no failure metric breached; opened 30%.",
+      "author": "PMM"
+    }
   ]
 }
