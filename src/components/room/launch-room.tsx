@@ -3,6 +3,7 @@ import { AlignmentSection } from "./alignment-section";
 import { AnalysisSection } from "./analysis-section";
 import { AssetsSection } from "./assets-section";
 import { BriefSection } from "./brief-section";
+import { SharePanel } from "./editors";
 import { DecisionsSection } from "./decisions-section";
 import { Overview } from "./overview";
 import { MetricsSection } from "./metrics-section";
@@ -72,6 +73,7 @@ export function LaunchRoom({ doc, now, liveClock = true, editable = false }: { d
     <div className="flex flex-col gap-6">
       {doc.meta.mode === "demo" && <DemoBanner />}
       <GenerationNote doc={doc} />
+      {editable && <SharePanel />}
       <nav aria-label="Launch room sections" className="-mx-4 overflow-x-auto px-4">
         <ul className="flex w-max gap-2">
           {NAV.map(([id, label]) => (
