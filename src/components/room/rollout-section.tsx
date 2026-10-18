@@ -2,7 +2,7 @@ import { CheckCircle2, CircleDashed, PauseCircle, Radio } from "lucide-react";
 import { Pill, Section } from "./section";
 import { StageMessage } from "./stage-message";
 import { fmtDay } from "@/lib/format";
-import { incrementOf, isFullyRolledOut, rolledOutPercent, stageGate } from "@/lib/launch-status";
+import { gateMoment, incrementOf, isFullyRolledOut, rolledOutPercent, stageGate } from "@/lib/launch-status";
 import { composeStageMessage } from "@/lib/notify";
 import type { LaunchDoc, RolloutStage, RolloutStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,7 @@ const STATUS: Record<RolloutStatus, { label: string; tone: "good" | "info" | "ba
 
 function GateLine({ doc, stage, now }: { doc: LaunchDoc; stage: RolloutStage; now: Date }) {
   if (stage.status === "not-started") return null;
-  const g = stageGate(doc, stage, now);
+  const g = stageGate(doc, stage, gateMoment(stage, now));
   if (g.overridden) return <p className="text-sm text-warning">Gate overridden (logged decision)</p>;
   if (g.noFailureMetrics) return <p className="text-sm text-warning">No failure metrics agreed — nothing to gate on</p>;
   if (g.breached.length) return <p className="text-sm text-destructive">Gate failing: {g.breached.length} metric(s) breached</p>;
