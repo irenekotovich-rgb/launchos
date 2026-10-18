@@ -16,6 +16,7 @@ import type {
   TeamKey,
   TeamSignoff,
 } from "./types";
+import { isLaunchDoc } from "./validate";
 
 const randomId = (prefix: string) =>
   `${prefix}-${typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID().slice(0, 8) : Math.random().toString(36).slice(2, 10)}`;
@@ -199,4 +200,26 @@ export function replaceAsset(
   const assets = exists ? doc.assets.map((a) => (a.id === id ? asset : a)) : [...doc.assets, asset];
   const next = { ...doc, assets, findings: doc.findings.filter((f) => f.assetId !== id), meta: { ...doc.meta, models: [...doc.meta.models, model] } };
   return logDecision(next, `${generated.title} ${exists ? "regenerated" : "generated"} from the current brief.`, now, "LaunchOS");
+}
+
+export function setShareInfo(doc: LaunchDoc, share: LaunchDoc["meta"]["share"] | null, now: Date): LaunchDoc {
+  const { share: _old, ...meta } = doc.meta;
+  void _old;
+  return touch({ ...doc, meta: share ? { ...meta, share } : meta }, now);
+}
+
+/**
+ * An imported file becomes a fresh launch in this browser: new id, no share secrets, export-only
+ * fields dropped. A demo export stays labelled demo (fictional content is never relabelled as own).
+ */
+export function prepareImport(raw: unknown, newId: string, now: Date): LaunchDoc | null {
+  if (!isLaunchDoc(raw)) return null;
+  const { author: _a, exportedAt: _e, ...doc } = raw as LaunchDoc & { author?: unknown; exportedAt?: unknown };
+  void _a;
+  void _e;
+  const { share: _s, sharedAt: _sa, ...meta } = doc.meta;
+  void _s;
+  void _sa;
+  const imported: LaunchDoc = { ...doc, meta: { ...meta, id: newId, mode: meta.mode === "demo" ? "demo" : "own", updatedAt: now.toISOString() } };
+  return logDecision(imported, "Launch imported from a JSON file.", now, "LaunchOS");
 }
