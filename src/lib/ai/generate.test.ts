@@ -28,3 +28,18 @@ describe("brief schema accepts what the form produces", async () => {
     expect(briefSchema.safeParse({ ...brief, targetDate: date }).success).toBe(false);
   });
 });
+
+describe("groundHighlight (review PR #13)", async () => {
+  const { groundHighlight } = await import("./generate");
+  const brief = "<brief>\nWhat ships: approvals for 2,400 workspaces; usage is growing.\n</brief>";
+  it("keeps numbers that appear in the brief (commas ignored)", () => {
+    expect(groundHighlight({ value: "2,400", label: "workspaces" }, brief).value).toBe("2,400");
+  });
+  it("turns an ungrounded number into Needs input", () => {
+    expect(groundHighlight({ value: "70%", label: "faster", visual: "meter", level: 70 }, brief)).toEqual({ value: "Needs input", label: "faster", visual: "stat" });
+  });
+  it("downgrades a trend when the brief states no direction", () => {
+    expect(groundHighlight({ value: "Q1", label: "renewals", visual: "trend", trend: "up" }, "<brief>Q1 renewals</brief>").visual).toBe("stat");
+    expect(groundHighlight({ value: "Usage", label: "usage", visual: "trend", trend: "up" }, brief).visual).toBe("trend");
+  });
+});

@@ -74,3 +74,17 @@ describe("review PR #11", () => {
     expect(prepareImport(file2, "id", NOW)).toBeNull();
   });
 });
+
+describe("sanitizeLaunchDoc (review PR #13)", async () => {
+  const { sanitizeLaunchDoc } = await import("./validate");
+  it("drops malformed facts and points instead of crashing the room", () => {
+    const doc = own();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (doc.analysis.fields.context as any).highlights = [{ value: 5 }, "x", { value: "1", label: "ok", level: 500, visual: "boom" }];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (doc.analysis.fields.context as any).points = ["fine", 3, null];
+    const clean = sanitizeLaunchDoc(doc).analysis.fields.context;
+    expect(clean.highlights).toEqual([{ value: "1", label: "ok", visual: "stat", level: 100 }]);
+    expect(clean.points).toEqual(["fine"]);
+  });
+});

@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
-import { LaunchRoom } from "@/components/room/launch-room";
-import { fmtDayYear } from "@/lib/format";
+import { LaunchRoom, SharedBanner } from "@/components/room/launch-room";
 import { SHARE_ID } from "@/lib/share";
 import { getShare } from "@/lib/share-store";
 
@@ -27,14 +25,8 @@ export default async function SharedLaunch({ params }: { params: Promise<{ id: s
     <>
       <SiteHeader />
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 pb-28 pt-2">
-        <div role="note" className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm">
-          <p>
-            <span className="font-semibold text-primary">Read-only snapshot</span>
-            {doc.meta.sharedAt && <> shared {fmtDayYear(doc.meta.sharedAt)}</>}. Recipient emails, sign-off names, owners and notes are removed.
-          </p>
-          <Link href="/new" className="font-semibold underline underline-offset-4">Run your own launch</Link>
-        </div>
-        <LaunchRoom doc={doc} now={now} />
+        <SharedBanner sharedAt={doc.meta.sharedAt} />
+        <LaunchRoom doc={doc} now={now} basePath={`/share/${id}`} />
       </main>
     </>
   );

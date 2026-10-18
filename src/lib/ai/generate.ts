@@ -5,7 +5,7 @@ import type { z } from "zod";
 import { GenerationUnavailable, generateStructured, modelChain } from "./models";
 import { loadPrompt, render } from "./prompts";
 import { analysisOutput, assetOutput, tierOutput, type briefSchema } from "./schemas";
-import type { AssetType, LaunchBrief, Messaging, ModelRun, Tier } from "../types";
+import type { AssetType, Highlight, LaunchBrief, Messaging, ModelRun, Tier } from "../types";
 
 export const ASSET_TYPES: AssetType[] = [
   "release-notes",
@@ -69,6 +69,23 @@ export function normalizeText(text: string): string {
     .trim();
 }
 
+/**
+ * Code-side honesty guard for analysis facts: a value containing a number that doesn't appear in
+ * the brief becomes "Needs input"; meters need a grounded value; trends need the brief to state a
+ * direction. The prompt asks for the same — this enforces it.
+ */
+export function groundHighlight(h: Highlight, briefText: string): Highlight {
+  const text = briefText.toLowerCase().replace(/,/g, "");
+  const numbers = h.value.replace(/,/g, "").match(/\d+(\.\d+)?/g) ?? [];
+  const grounded = numbers.every((n) => text.includes(n));
+  if (!grounded) return { value: "Needs input", label: h.label, visual: "stat" };
+  if (h.visual === "meter" && !numbers.length) return { value: h.value, label: h.label, visual: "stat" };
+  if (h.visual === "trend" && !/\b(grow|growing|increase|increasing|rising|up|decline|declining|drop|falling|down|flat|stable)\b/.test(text)) {
+    return { value: h.value, label: h.label, visual: "stat" };
+  }
+  return h;
+}
+
 /** Small concurrency limit: free tiers rate-limit bursts. */
 async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
   const out: R[] = new Array(items.length);
@@ -128,7 +145,16 @@ export async function generateLaunchContent(brief: z.infer<typeof briefSchema>, 
   const analysisTask = generateStructured(analysisOutput, render(analysisPrompt.body, { brief: briefText }), chain, deadline)
     .then((r) => {
       models.push({ step: "analysis", modelId: r.modelId, ranAt, prompt: analysisPrompt.name, promptVersion: analysisPrompt.version });
-      return Object.fromEntries(Object.entries(r.object).map(([k, v]) => [k, normalizeText(v)])) as typeof r.object;
+      return Object.fromEntries(
+        Object.entries(r.object).map(([k, v]) => [
+          k,
+          {
+            summary: normalizeText(v.summary),
+            highlights: v.highlights.map((h) => groundHighlight({ ...h, value: normalizeText(h.value), label: normalizeText(h.label) }, briefText)),
+            points: v.points.map(normalizeText).filter(Boolean),
+          },
+        ]),
+      ) as typeof r.object;
     })
     .catch(() => null);
 

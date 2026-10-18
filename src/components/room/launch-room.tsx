@@ -67,8 +67,33 @@ function GenerationNote({ doc }: { doc: LaunchDoc }) {
   );
 }
 
+export function SharedBanner({ sharedAt }: { sharedAt?: string }) {
+  return (
+    <div role="note" className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm">
+      <p>
+        <span className="font-semibold text-primary">Read-only snapshot</span>
+        {sharedAt && <> shared {new Date(sharedAt).toISOString().slice(0, 10)}</>}. Recipient emails, sign-off names, owners and notes are removed.
+      </p>
+      <Link href="/new" className="font-semibold underline underline-offset-4">Run your own launch</Link>
+    </div>
+  );
+}
+
 /** The launch room: renders a LaunchDoc as of `now`. Pure render; interactivity lives in child client components. */
-export function LaunchRoom({ doc, now, liveClock = true, editable = false }: { doc: LaunchDoc; now: Date; liveClock?: boolean; editable?: boolean }) {
+export function LaunchRoom({
+  doc,
+  now,
+  basePath,
+  liveClock = true,
+  editable = false,
+}: {
+  doc: LaunchDoc;
+  now: Date;
+  /** Route prefix for sub-pages: /demo, /launch/<id> or /share/<id>. */
+  basePath: string;
+  liveClock?: boolean;
+  editable?: boolean;
+}) {
   return (
     <div className="flex flex-col gap-6">
       {doc.meta.mode === "demo" && <DemoBanner />}
@@ -87,7 +112,7 @@ export function LaunchRoom({ doc, now, liveClock = true, editable = false }: { d
       </nav>
       <Overview doc={doc} now={now} liveClock={liveClock} />
       <BriefSection doc={doc} editable={editable} />
-      <AnalysisSection doc={doc} editable={editable} />
+      <AnalysisSection doc={doc} basePath={basePath} editable={editable} />
       <AlignmentSection doc={doc} editable={editable} />
       <PlanSection doc={doc} editable={editable} />
       <RolloutSection doc={doc} now={now} editable={editable} />

@@ -78,8 +78,15 @@ export function mergeGenerated(doc: LaunchDoc, content: GeneratedContent, now: D
   const analysisFields = { ...doc.analysis.fields };
   if (content.analysis) {
     for (const k of ANALYSIS_KEYS) {
-      const text = content.analysis[k]?.trim();
-      if (text) analysisFields[k] = { text, source: "ai-draft", updatedAt: stamp };
+      const area = content.analysis[k];
+      if (!area || (!area.summary.trim() && !area.highlights.length)) continue;
+      analysisFields[k] = {
+        text: area.summary.trim(),
+        highlights: area.highlights.slice(0, 3),
+        points: area.points,
+        source: "ai-draft",
+        updatedAt: stamp,
+      };
     }
   }
   const assets: Asset[] = content.assets.map((a) => ({

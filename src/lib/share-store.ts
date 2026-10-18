@@ -5,7 +5,7 @@ import "server-only";
 import { BlobNotFoundError, del, get, put } from "@vercel/blob";
 import { timingSafeEqual } from "node:crypto";
 import { randomToken, redactForShare, SHARE_TTL_DAYS } from "./share";
-import { isLaunchDoc } from "./validate";
+import { isLaunchDoc, sanitizeLaunchDoc } from "./validate";
 import type { LaunchDoc } from "./types";
 
 interface Stored {
@@ -52,7 +52,7 @@ async function read(id: string): Promise<Stored | null> {
     const res = await get(key(id), { access: "private" });
     if (!res || res.statusCode !== 200) return null;
     const parsed = JSON.parse(await new Response(res.stream).text()) as Stored;
-    return parsed && isLaunchDoc(parsed.doc) ? parsed : null;
+    return parsed && isLaunchDoc(parsed.doc) ? { ...parsed, doc: sanitizeLaunchDoc(parsed.doc) } : null;
   } catch (err) {
     if (err instanceof BlobNotFoundError) return null;
     throw err;

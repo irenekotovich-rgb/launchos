@@ -89,8 +89,25 @@ export type AnalysisKey =
   | "capacity"
   | "audience";
 
+/** One key fact shown as an infographic on the analysis tile. */
+export interface Highlight {
+  /** The fact itself, short: "2,400", "Q1", "2 of 5", "Needs input". */
+  value: string;
+  /** What it measures, 1–4 words: "workspaces", "SOC 2 renewals". */
+  label: string;
+  /** stat = big number · meter = value with a 0–100 bar (`level`) · trend = value with an arrow. */
+  visual?: "stat" | "meter" | "trend";
+  level?: number;
+  trend?: "up" | "down" | "flat";
+}
+
 export interface AnalysisField {
+  /** One-paragraph summary (shown on the detail page). */
   text: string;
+  /** Exactly three key facts for the tile (minimal text, maximum visual). */
+  highlights?: Highlight[];
+  /** Detail-page bullets: the evidence and the open questions. */
+  points?: string[];
   /** "ai-draft" fields render with "draft — review before publishing". */
   source: "manual" | "ai-draft";
   updatedAt: IsoDate | null;

@@ -57,6 +57,15 @@ for (const w of [390, 1440]) {
   await p.locator("#rollout").getByLabel("Email", { exact: true }).fill("elena@example.com");
   await p.locator("#rollout").getByRole("button", { name: "Add" }).click();
   await p.locator("#rollout").screenshot({ path: `qa-shots/edit-recipients-${w}.png` });
+  // analysis detail page (own launch, with editors)
+  await p.getByRole("link", { name: /Context — open detailed analysis/ }).click();
+  await p.waitForURL(/analysis\/context/);
+  await p.getByLabel("Fact 1 value").fill("2,400");
+  await p.getByLabel("Fact 1 label").fill("workspaces today");
+  await p.getByRole("button", { name: "Save facts" }).click();
+  await p.screenshot({ path: `qa-shots/edit-analysis-detail-${w}.png`, fullPage: true });
+  await p.getByRole("link", { name: /Analysis$/ }).first().click();
+  await p.waitForURL(/launch\/[^/]+#analysis$/);
   // persistence
   await p.reload();
   const locked = await p.getByText(/Locked .* 6\/6 signed/).count();
