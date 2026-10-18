@@ -9,3 +9,4 @@ out/
 # private owner files — not part of the public repo
 START-HERE.md
 linkedin-article-draft.md
+*.tsbuildinfo
