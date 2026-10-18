@@ -19,7 +19,7 @@ export default function Home() {
       <SiteHeader />
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-14 px-4 pb-16 pt-8 sm:pt-16">
         <section className="flex max-w-3xl flex-col gap-6">
-          <h1 className="text-gradient text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl">
+          <h1 className="text-chrome text-5xl font-extrabold leading-[1.02] tracking-tight sm:text-7xl">
             Your launch, in one URL.
           </h1>
           <p className="text-lg text-muted-foreground sm:text-xl">
@@ -45,12 +45,12 @@ export default function Home() {
           </h2>
           <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {STAGES.map((stage, i) => (
-              <li key={stage.name} className="surface rounded-xl p-5">
+              <li key={stage.name} className={i === 4 ? "surface-burgundy rounded-3xl p-5" : "surface rounded-3xl p-5"}>
                 <div className="flex items-baseline gap-3">
-                  <span className="font-mono text-sm text-brand-orange">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="text-chrome font-mono text-lg font-bold">{String(i + 1).padStart(2, "0")}</span>
                   <h3 className="font-semibold">{stage.name}</h3>
                 </div>
-                <p className="mt-2 text-sm text-muted-foreground">{stage.detail}</p>
+                <p className={i === 4 ? "mt-2 text-sm text-white/80" : "mt-2 text-sm text-muted-foreground"}>{stage.detail}</p>
               </li>
             ))}
           </ol>
