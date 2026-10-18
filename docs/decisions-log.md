@@ -9,3 +9,5 @@
 - 2026-10-18 — Visual direction changed from dark mission-control to grey metallic → lilac gradient with lilac + orange accents; design-reference.html kept as a layout-only prototype. Owner design review scheduled after M3.
 - 2026-10-18 — Demo launch product name: "Launch Service" (fictional), per owner.
 - 2026-10-18 — START-HERE.md (Ukrainian owner notes) and linkedin-article-draft.md (unpublished draft) gitignored: the repo is English-only and public.
+- 2026-10-18 — OpenRouter fallback runs on `:free` models only: no payment method added to the owner's account (key capped at $100 spend by OpenRouter's default anyway).
+- 2026-10-18 — PostHog: owner's account is in EU Cloud → host `https://eu.i.posthog.com`; using the existing empty "Default project". Project token stored as a public config var (it's write-only by design and ships to the browser).
