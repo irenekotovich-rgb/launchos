@@ -1,5 +1,5 @@
 import { CheckCircle2, CircleDashed, PauseCircle, Radio } from "lucide-react";
-import { RecipientForm, RecipientRemove } from "./editors";
+import { RecipientForm, RecipientRemove, StageControls } from "./editors";
 import { Pill, Section } from "./section";
 import { StageMessage } from "./stage-message";
 import { fmtDay } from "@/lib/format";
@@ -81,16 +81,18 @@ export function RolloutSection({ doc, now, editable = false }: { doc: LaunchDoc;
                     : `Planned ${fmtDay(stage.plannedStart)}`}
               </p>
               <GateLine doc={doc} stage={stage} now={now} />
+              {editable && <StageControls cumulative={stage.cumulative} />}
               {stage.status === "complete" && (
                 <>
                   <p className="text-sm">
                     {stage.notifiedAt ? (
-                      <span className="text-success">Stage message sent {fmtDay(stage.notifiedAt)}</span>
+                      <span className="text-success">Stage message opened {fmtDay(stage.notifiedAt)} — sent from your mail app</span>
                     ) : (
-                      <span className="text-warning">Stage message not sent yet</span>
+                      <span className="text-warning">Stage message not opened yet</span>
                     )}
                   </p>
                   <StageMessage
+                    stage={stage.cumulative}
                     message={composeStageMessage(doc, stage, now)}
                     label={stage.notifiedAt ? "View the message" : "Compose stage message"}
                   />
@@ -107,9 +109,11 @@ export function RolloutSection({ doc, now, editable = false }: { doc: LaunchDoc;
         ) : (
           <ul className="flex flex-wrap gap-2">
             {leads.map((r) => (
-              <li key={r.email} className="rounded-full border border-border px-3 py-1 text-xs">
-                <span className="font-semibold">{r.name}</span>{" "}
-                <span className="text-muted-foreground">· {r.role} · {r.group === "stakeholder" ? "stakeholder" : "team lead"}</span>
+              <li key={r.email} className="inline-flex max-w-full items-center rounded-full border border-border py-1 pr-1 pl-3 text-xs">
+                <span className="min-w-0 break-words">
+                  <span className="font-semibold">{r.name}</span>{" "}
+                  <span className="text-muted-foreground">· {r.role} · {r.group === "stakeholder" ? "stakeholder" : "team lead"}</span>
+                </span>
                 {editable && <RecipientRemove email={r.email} name={r.name} />}
               </li>
             ))}

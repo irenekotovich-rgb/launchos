@@ -21,6 +21,9 @@ const STATE: Record<MetricState, { label: string; cls: string; Icon: typeof Chec
 const W = 280;
 const H = 132;
 const PAD = { top: 16, right: 12, bottom: 26, left: 12 };
+/** Label geometry: baseline offset of text next to a point, and the vertical gap two labels need. */
+const LABEL_BASELINE = 4;
+const LABEL_CLEARANCE = 14;
 const thresholdText = (s: MetricSeries) =>
   `${s.kind === "success" ? "target" : "fails at"} ${s.direction === "above" ? "≥" : "≤"} ${fmtValue(s.threshold, s.unit)}`;
 
@@ -75,9 +78,11 @@ function Chart({ s }: { s: MetricSeries }) {
           const last = drawn.at(-1)!;
           const px = x(last.i);
           const py = y(last.value);
-          // Right of the point when there's room (clear of the line and threshold), else above/below.
-          const right = last.i < s.points.length - 1;
-          const vy = right ? py + 4 : Math.abs(py - 14 - ty) < 10 || py - 10 < 10 ? py + 18 : py - 10;
+          // Right of the point when there's room and it clears the threshold label (top-right);
+          // otherwise above or below the point, whichever avoids the threshold line.
+          const clearsThresholdLabel = Math.abs(py + LABEL_BASELINE - (ty - LABEL_BASELINE)) >= LABEL_CLEARANCE;
+          const right = last.i < s.points.length - 1 && clearsThresholdLabel;
+          const vy = right ? py + LABEL_BASELINE : Math.abs(py - LABEL_CLEARANCE - ty) < 10 || py - 10 < 10 ? py + 18 : py - 10;
           return (
             <text x={right ? px + 9 : px} y={vy} textAnchor={right ? "start" : "middle"} className="fill-foreground text-[12px] font-semibold">
               {fmtValue(last.value, s.unit)}

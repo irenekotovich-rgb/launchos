@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import * as E from "@/lib/edit";
-import type { AnalysisKey, AssetType, LaunchBrief, LaunchDoc, Metric, PhaseKey, Recipient, TeamKey, TeamSignoff } from "@/lib/types";
+import { stageGate } from "@/lib/launch-status";
+import * as R from "@/lib/rollout-edit";
+import type { AnalysisKey, AssetType, LaunchBrief, LaunchDoc, Metric, PhaseKey, Recipient, RolloutPercent, TeamKey, TeamSignoff } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Apply = (edit: (doc: LaunchDoc, now: Date) => LaunchDoc) => void;
@@ -503,3 +505,173 @@ export function RegenerateAsset({ type, title }: { type: AssetType; title: strin
   );
 }
 
+// ---------------------------------------------------------------- rollout
+
+/** Editor context if present (own launch), else null (demo) — for components used in both. */
+export function useOptionalEditor() {
+  return useContext(Ctx);
+}
+
+export function StageControls({ cumulative }: { cumulative: RolloutPercent }) {
+  const { doc, apply } = useEditor();
+  const stage = doc.rollout.stages.find((s) => s.cumulative === cumulative)!;
+  const [mode, setMode] = useState<"idle" | "override" | "halt">("idle");
+  const [reason, setReason] = useState("");
+  const [note, setNote] = useState<string | null>(null);
+  const id = useId();
+  const gate = stage.status === "live" ? stageGate(doc, stage, new Date()) : null;
+  const close = () => {
+    setMode("idle");
+    setReason("");
+  };
+
+  if (stage.status === "not-started") {
+    return R.canStart(doc, cumulative) ? (
+      <Button size="sm" variant="outline" className="self-start" onClick={() => apply((d, now) => R.startStage(d, cumulative, now))}>
+        Start {cumulative}% stage
+      </Button>
+    ) : null;
+  }
+  if (stage.status === "halted") {
+    return (
+      <Button size="sm" variant="outline" className="self-start" onClick={() => apply((d, now) => R.resumeStage(d, cumulative, now))}>
+        Resume stage
+      </Button>
+    );
+  }
+  if (stage.status !== "live") return null;
+
+  if (mode !== "idle") {
+    const label = mode === "override" ? "Why close despite the failing gate? (stage is marked overridden)" : "Why halt this stage?";
+    return (
+      <form
+        className="flex flex-col gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!reason.trim()) return;
+          apply((d, now) => (mode === "override" ? R.completeStage(d, cumulative, now, reason) : R.haltStage(d, cumulative, reason, now)));
+          close();
+        }}
+        onKeyDown={(e) => e.key === "Escape" && close()}
+      >
+        <label htmlFor={id} className="text-xs font-semibold">{label}</label>
+        <Input id={id} autoFocus value={reason} maxLength={200} onChange={(e) => setReason(e.target.value)} placeholder="Logged as a decision" />
+        <div className="flex gap-2">
+          <Button type="submit" size="sm" variant={mode === "halt" ? "destructive" : "default"} disabled={!reason.trim()}>
+            {mode === "override" ? "Override and close" : "Halt stage"}
+          </Button>
+          <Button type="button" size="sm" variant="ghost" onClick={close}>Cancel</Button>
+        </div>
+      </form>
+    );
+  }
+  return (
+    <div className="flex flex-wrap gap-2">
+      {gate?.passes ? (
+        <Button
+          size="sm"
+          onClick={() => {
+            // Re-check at click time: a reading can go stale between render and click.
+            if (!stageGate(doc, stage, new Date()).passes) {
+              setNote("The gate stopped passing (a reading went stale). Record new readings or close with override.");
+              return;
+            }
+            setNote(null);
+            apply((d, now) => R.completeStage(d, cumulative, now));
+          }}
+        >
+          {cumulative === 100 ? "Complete — rolled out to 100%" : `Complete ${cumulative}% stage`}
+        </Button>
+      ) : (
+        <Button size="sm" variant="outline" onClick={() => setMode("override")}>Close with override…</Button>
+      )}
+      <Button size="sm" variant="ghost" onClick={() => setMode("halt")}>Halt…</Button>
+      <p className="w-full text-xs text-warning empty:hidden" aria-live="polite">{note ?? ""}</p>
+    </div>
+  );
+}
+
+export function ReadingsForm() {
+  const { doc, apply } = useEditor();
+  const started = doc.rollout.stages.filter((s) => s.status !== "not-started");
+  const current = started.find((s) => s.status === "live" || s.status === "halted") ?? started.at(-1);
+  const [picked, setStage] = useState<RolloutPercent | undefined>(undefined);
+  // Default to the current stage, so the form follows the rollout as stages start.
+  const stage = picked !== undefined && started.some((s) => s.cumulative === picked) ? picked : current?.cumulative;
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [csv, setCsv] = useState("");
+  const [note, setNote] = useState<string | null>(null);
+  const id = useId();
+  if (!doc.alignment.metrics.length) return null;
+  if (!started.length || stage === undefined) {
+    return <p className="mb-4 text-sm text-muted-foreground">Start the 10% stage to record metric readings.</p>;
+  }
+  const NUM = /^-?\d+(\.\d+)?$/;
+  const parsed = Object.fromEntries(
+    Object.entries(values).filter(([, v]) => NUM.test(v.trim())).map(([k, v]) => [k, Number(v)]),
+  );
+  const invalid = Object.entries(values).filter(([, v]) => v.trim() !== "" && !NUM.test(v.trim())).map(([k]) => k);
+  const closed = doc.rollout.stages.find((s) => s.cumulative === stage)?.status === "complete";
+  return (
+    <details className="mb-4 rounded-xl border border-border bg-background/30 p-4">
+      <summary className="cursor-pointer text-sm font-semibold">Record readings</summary>
+      <form
+        className="mt-3 flex flex-col gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!Object.keys(parsed).length) return;
+          apply((d, now) => R.addReadings(d, stage, parsed, now));
+          setValues({});
+          setNote(`Saved ${Object.keys(parsed).length} reading(s) to the ${stage}% stage.`);
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <label htmlFor={`${id}-stage`} className="text-sm">Stage</label>
+          <select id={`${id}-stage`} value={stage} onChange={(e) => setStage(Number(e.target.value) as RolloutPercent)} className="h-8 rounded-lg border border-input bg-input/30 px-2 text-sm">
+            {started.map((s) => <option key={s.cumulative} value={s.cumulative}>{s.cumulative}%</option>)}
+          </select>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {doc.alignment.metrics.map((m) => (
+            <div key={m.id} className="flex flex-col gap-1">
+              <label htmlFor={`${id}-${m.id}`} className="text-xs font-semibold">{m.name}{m.unit && ` (${m.unit})`}</label>
+              <Input
+                id={`${id}-${m.id}`}
+                inputMode="decimal"
+                aria-invalid={invalid.includes(m.id)}
+                value={values[m.id] ?? ""}
+                onChange={(e) => setValues({ ...values, [m.id]: e.target.value })}
+              />
+              {invalid.includes(m.id) && <span className="text-xs text-destructive">Not a number — use a dot for decimals.</span>}
+            </div>
+          ))}
+        </div>
+        {closed && <p className="text-xs text-muted-foreground">This stage is closed — readings added now are kept for the record but don&apos;t change its gate.</p>}
+        <Button type="submit" size="sm" className="self-start" disabled={!Object.keys(parsed).length || invalid.length > 0}>Save readings</Button>
+      </form>
+      <form
+        className="mt-4 flex flex-col gap-2 border-t border-border pt-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          let summary = "";
+          apply((d, now) => {
+            const res = R.importReadingsCsv(d, csv, now);
+            const shown = res.errors.slice(0, 5).join(" ");
+            const more = res.errors.length > 5 ? ` …and ${res.errors.length - 5} more.` : "";
+            summary = `Imported ${res.imported} reading(s).${res.duplicates ? ` ${res.duplicates} duplicate(s) skipped.` : ""}${res.errors.length ? ` Skipped: ${shown}${more}` : ""}`;
+            return res.doc;
+          });
+          setNote(summary);
+          setCsv("");
+        }}
+      >
+        <label htmlFor={`${id}-csv`} className="text-xs font-semibold">
+          Import CSV — stage,metric,value[,recorded_at] · metric = id or name (case-insensitive) · decimals with a dot · ISO dates
+        </label>
+        <Textarea id={`${id}-csv`} rows={3} value={csv} onChange={(e) => setCsv(e.target.value)} placeholder={"stage,metric,value\n30,Support tickets per 1k workspaces,9.4"} />
+        <Button type="submit" size="sm" variant="outline" className="self-start" disabled={!csv.trim()}>Import</Button>
+      </form>
+      <p className="mt-2 text-xs text-muted-foreground empty:hidden" aria-live="polite">{note ?? ""}</p>
+    </details>
+  );
+}

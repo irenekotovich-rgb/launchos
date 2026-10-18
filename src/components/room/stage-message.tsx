@@ -5,15 +5,22 @@ import { Copy, Mail } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { MAILTO_MAX_LENGTH, mailtoUrl, type StageMessage as Message } from "@/lib/notify";
 import { cn } from "@/lib/utils";
+import { markNotified } from "@/lib/rollout-edit";
+import type { RolloutPercent } from "@/lib/types";
+import { useOptionalEditor } from "./editors";
 
 /** Preview of the stage-complete message with "open in email" and copy. Sending stays with the PMM. */
-export function StageMessage({ message, label }: { message: Message; label: string }) {
+export function StageMessage({ message, label, stage }: { message: Message; label: string; stage: RolloutPercent }) {
+  const editor = useOptionalEditor();
+  // In an own launch, opening or copying the message records it as sent (the PMM's client sends it).
+  const sent = () => editor?.apply((d, now) => markNotified(d, stage, now));
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(`To: ${message.to.join(", ")}\nSubject: ${message.subject}\n\n${message.body}`);
       setCopied(true);
+      sent();
     } catch {
       setCopied(false);
     }
@@ -37,7 +44,7 @@ export function StageMessage({ message, label }: { message: Message; label: stri
           <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words font-sans text-muted-foreground">{message.body}</pre>
           <div className="flex flex-wrap gap-2">
             {message.to.length > 0 && mailtoUrl(message).length <= MAILTO_MAX_LENGTH ? (
-              <a href={mailtoUrl(message)} className={cn(buttonVariants({ size: "sm" }), "h-8")}>
+              <a href={mailtoUrl(message)} onClick={sent} className={cn(buttonVariants({ size: "sm" }), "h-8")}>
                 <Mail /> Open in email
               </a>
             ) : (
