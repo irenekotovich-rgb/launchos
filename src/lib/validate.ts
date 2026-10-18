@@ -25,7 +25,11 @@ export function isLaunchDoc(v: unknown): v is LaunchDoc {
     isObj(alignment) && isObj(alignment.signoffs) && Array.isArray(alignment.metrics) &&
     TEAMS.every((t) => isObj((alignment.signoffs as Record<string, unknown>)[t])) &&
     isObj(analysis) && isObj(analysis.fields) &&
-    Array.isArray(v.checklist) && Array.isArray(v.assets) && Array.isArray(v.findings) && Array.isArray(v.decisions)
+    Array.isArray(v.checklist) && v.checklist.every((c) => isObj(c) && typeof c.id === "string" && typeof c.label === "string") &&
+    Array.isArray(v.assets) && v.assets.every((a) => isObj(a) && typeof a.id === "string" && typeof a.type === "string" && typeof a.content === "string") &&
+    Array.isArray(v.findings) && v.findings.every((f) => isObj(f) && typeof f.assetId === "string" && typeof f.excerpt === "string") &&
+    Array.isArray(v.decisions) && v.decisions.every((d) => isObj(d) && typeof d.id === "string" && typeof d.text === "string" && typeof d.date === "string") &&
+    alignment.metrics.every((m) => isObj(m) && typeof m.id === "string" && typeof m.name === "string" && typeof m.threshold === "number")
   );
 }
 

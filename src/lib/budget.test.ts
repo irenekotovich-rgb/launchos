@@ -56,3 +56,33 @@ describe("weighted costs (review PR #9)", () => {
     expect((await reserveRun(day, "c", RUN_COST.asset)).allowed).toBe(false);
   });
 });
+
+describe("reservations (repo audit)", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it("a daily-cap denial doesn't spend the client's hourly quota", async () => {
+    vi.stubEnv("BLOB_READ_WRITE_TOKEN", "");
+    vi.stubEnv("LAUNCHOS_DAILY_LIVE_RUNS", "1");
+    vi.stubEnv("LAUNCHOS_RUNS_PER_CLIENT_HOUR", "2");
+    const day = new Date("2033-01-01T10:00:00Z");
+    expect((await reserveRun(day, "other")).allowed).toBe(true); // uses the whole daily cap
+    expect(await reserveRun(day, "victim")).toMatchObject({ allowed: false, reason: "daily" });
+    vi.stubEnv("LAUNCHOS_DAILY_LIVE_RUNS", "0");
+    expect((await reserveRun(day, "victim")).allowed).toBe(true);
+    expect((await reserveRun(day, "victim")).allowed).toBe(true); // both hourly runs still available
+  });
+  it("refund removes exactly the failed reservation", async () => {
+    vi.stubEnv("BLOB_READ_WRITE_TOKEN", "");
+    vi.stubEnv("LAUNCHOS_DAILY_LIVE_RUNS", "0");
+    vi.stubEnv("LAUNCHOS_RUNS_PER_CLIENT_HOUR", "2");
+    const { refundRun, RUN_COST } = await import("./budget");
+    const t = new Date("2033-02-02T10:00:00Z");
+    const big = await reserveRun(t, "c", RUN_COST.generate);
+    const small = await reserveRun(t, "c", RUN_COST.check);
+    expect(big.allowed && small.allowed).toBe(true);
+    if (big.allowed) await refundRun(t, "c", RUN_COST.generate, big.reservation); // the generate failed
+    // Correct refund leaves 1/6 spent: a new generate (→ 1.17) and a check (→ 1.33) both fit under 2.
+    // Popping the wrong entry would leave 1 spent, and the check would be refused at 2.17.
+    expect((await reserveRun(t, "c", RUN_COST.generate)).allowed).toBe(true);
+    expect((await reserveRun(t, "c", RUN_COST.check)).allowed).toBe(true);
+  });
+});
