@@ -103,6 +103,11 @@ export function stageGate(doc: LaunchDoc, stage: RolloutStage, now: Date): Stage
   return gate;
 }
 
+/** A closed stage is judged as of the moment it closed; open stages as of `now`. */
+export function gateMoment(stage: RolloutStage, now: Date): Date {
+  return stage.completedAt ? new Date(stage.completedAt) : now;
+}
+
 export function activeStage(doc: LaunchDoc): RolloutStage | undefined {
   return (
     doc.rollout.stages.find((s) => s.status === "live" || s.status === "halted") ??
