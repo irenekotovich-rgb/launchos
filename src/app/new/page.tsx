@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site-header";
 import { BriefForm } from "@/components/brief/brief-form";
+import { ImportLaunch } from "@/components/brief/import-launch";
 
 export const metadata: Metadata = { title: "New launch — LaunchOS" };
 
@@ -17,6 +18,7 @@ export default function NewLaunchPage() {
           </p>
         </div>
         <BriefForm />
+        <ImportLaunch />
       </main>
     </>
   );
