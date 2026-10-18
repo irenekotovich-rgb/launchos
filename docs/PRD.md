@@ -33,8 +33,10 @@ launch, where is it, and are we ready?"
 ## 4. Scope v1
 **In:**
 - **Stage 1 — Analysis:** context, environment, competitors, economics,
-  company capacity for this launch, target audience. Structured fields, each
-  with an optional AI draft from the brief (draft — review before publishing)
+  company capacity for this launch, target audience. Each area is a tile with
+  three key facts as infographics (minimal text) that opens a detail page with
+  the summary, evidence and open questions. Optional AI draft from the brief
+  (draft — review before publishing; unsupported facts read "Needs input")
 - **Stage 2 — Problem & metrics alignment:** which problem it solves and for
   whom; success metrics and failure metrics (each with threshold + owner);
   sign-off by stakeholders, R&D, marketing, sales and two suggested extra
