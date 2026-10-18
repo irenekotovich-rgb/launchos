@@ -56,7 +56,7 @@ export const messagingSchema = z.object({
   avoid: z.array(z.string().max(300)).max(12),
 });
 
-const ASSET_TYPE = z.enum(["release-notes", "blog-post", "announcement-email", "linkedin-post", "sales-one-pager", "faq"]);
+const ASSET_TYPE = z.enum(["release-notes", "blog-post", "announcement-email", "linkedin-post", "sales-one-pager", "faq", "sales-deck", "campaign-plan"]);
 
 /** Consistency check request: brief + messaging + the assets to check. */
 export const consistencyRequest = z.object({
@@ -65,7 +65,7 @@ export const consistencyRequest = z.object({
   assets: z
     .array(z.object({ id: z.string().max(40), type: ASSET_TYPE, title: z.string().max(200), content: z.string().max(6000) }))
     .min(1)
-    .max(6),
+    .max(8),
 });
 
 export const consistencyOutput = z.object({

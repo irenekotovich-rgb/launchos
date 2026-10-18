@@ -243,7 +243,11 @@ export type AssetType =
   | "announcement-email"
   | "linkedin-post"
   | "sales-one-pager"
-  | "faq";
+  | "faq"
+  /** Slide outline + live demo script for the sales team. */
+  | "sales-deck"
+  /** How the launch plugs into the marketing campaign, channel by channel and stage by stage. */
+  | "campaign-plan";
 
 export type AssetStatus = "generating" | "draft" | "stale" | "ok";
 

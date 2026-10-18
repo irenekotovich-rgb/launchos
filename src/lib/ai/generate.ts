@@ -1,4 +1,4 @@
-// Server-side generation: brief → tier + messaging block → analysis drafts → six assets.
+// Server-side generation: brief → tier + messaging block → analysis drafts → eight assets.
 // Every asset is generated from the same brief + messaging block (PRD §5 "Generation").
 import "server-only";
 import type { z } from "zod";
@@ -14,6 +14,8 @@ export const ASSET_TYPES: AssetType[] = [
   "linkedin-post",
   "sales-one-pager",
   "faq",
+  "sales-deck",
+  "campaign-plan",
 ];
 
 export interface GeneratedContent {
@@ -159,7 +161,8 @@ export async function generateLaunchContent(brief: z.infer<typeof briefSchema>, 
     .catch(() => null);
 
   const failedAssets: AssetType[] = [];
-  const assetsTask = mapLimit(ASSET_TYPES, 2, async (type) => {
+  // Three in flight: eight assets must fit the request deadline; free tiers still cope with 3.
+  const assetsTask = mapLimit(ASSET_TYPES, 3, async (type) => {
     try {
       const r = await generateAsset(brief, messaging, type, deadline, ranAt);
       models.push(r.model);

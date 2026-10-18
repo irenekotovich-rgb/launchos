@@ -13,4 +13,5 @@ Every model prompt LaunchOS uses lives here as a versioned Markdown file — nev
 |---|---|---|
 | `brief-to-tier.md` | tier | tier, rationale, messaging block |
 | `analysis-draft.md` | analysis | six analysis fields (AI drafts) |
-| `asset-release-notes.md` … `asset-faq.md` | assets | one asset each |
+| `asset-release-notes.md` … `asset-faq.md`, `asset-sales-deck.md`, `asset-campaign-plan.md` | assets | one asset each (8) |
+| `consistency-rubric.md` | consistency | findings per asset |
