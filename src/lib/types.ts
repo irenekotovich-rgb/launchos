@@ -21,6 +21,15 @@ export interface LaunchDoc {
   assets: Asset[];
   findings: ConsistencyFinding[];
   decisions: Decision[];
+  /** Messaging block every asset was generated from (absent until generation ran). */
+  messaging?: Messaging;
+}
+
+export interface Messaging {
+  positioning: string;
+  pillars: string[];
+  proofPoints: string[];
+  avoid: string[];
 }
 
 // ---------------------------------------------------------------- meta
@@ -34,12 +43,20 @@ export interface LaunchMeta {
   author: { name: string; url: string };
   /** Every model call that produced content in this doc (honesty rule). */
   models: ModelRun[];
+  /** Outcome of the AI generation step; absent for the demo and pre-M2 docs. */
+  generation?: {
+    status: "live" | "unavailable" | "budget-exhausted";
+    note: string;
+  };
 }
 
 export interface ModelRun {
   step: "analysis" | "tier" | "assets" | "consistency";
   modelId: string;
   ranAt: IsoDate;
+  /** prompts/<name>.md and its frontmatter version. */
+  prompt?: string;
+  promptVersion?: number;
 }
 
 // ---------------------------------------------------------------- brief
