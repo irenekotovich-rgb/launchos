@@ -68,7 +68,20 @@ function GenerationNote({ doc }: { doc: LaunchDoc }) {
 }
 
 /** The launch room: renders a LaunchDoc as of `now`. Pure render; interactivity lives in child client components. */
-export function LaunchRoom({ doc, now, liveClock = true, editable = false }: { doc: LaunchDoc; now: Date; liveClock?: boolean; editable?: boolean }) {
+export function LaunchRoom({
+  doc,
+  now,
+  basePath,
+  liveClock = true,
+  editable = false,
+}: {
+  doc: LaunchDoc;
+  now: Date;
+  /** Route prefix for sub-pages: /demo, /launch/<id> or /share/<id>. */
+  basePath: string;
+  liveClock?: boolean;
+  editable?: boolean;
+}) {
   return (
     <div className="flex flex-col gap-6">
       {doc.meta.mode === "demo" && <DemoBanner />}
@@ -87,7 +100,7 @@ export function LaunchRoom({ doc, now, liveClock = true, editable = false }: { d
       </nav>
       <Overview doc={doc} now={now} liveClock={liveClock} />
       <BriefSection doc={doc} editable={editable} />
-      <AnalysisSection doc={doc} editable={editable} />
+      <AnalysisSection doc={doc} basePath={basePath} editable={editable} />
       <AlignmentSection doc={doc} editable={editable} />
       <PlanSection doc={doc} editable={editable} />
       <RolloutSection doc={doc} now={now} editable={editable} />

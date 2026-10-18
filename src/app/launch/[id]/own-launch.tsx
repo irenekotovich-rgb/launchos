@@ -73,7 +73,7 @@ export function OwnLaunch({ id }: { id: string }) {
           setSaveError(!saveLaunch(next));
         }}
       >
-        <LaunchRoom doc={doc} now={new Date()} editable />
+        <LaunchRoom doc={doc} now={new Date()} basePath={`/launch/${id}`} editable />
       </LaunchEditor>
 
     </div>
