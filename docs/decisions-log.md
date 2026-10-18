@@ -9,3 +9,6 @@
 - 2026-10-18 — Visual direction changed from dark mission-control to grey metallic → lilac gradient with lilac + orange accents; design-reference.html kept as a layout-only prototype. Owner design review scheduled after M3.
 - 2026-10-18 — Demo launch product name: "Launch Service" (fictional), per owner.
 - 2026-10-18 — START-HERE.md (Ukrainian owner notes) and linkedin-article-draft.md (unpublished draft) gitignored: the repo is English-only and public.
+- 2026-10-18 — Secrets flow: keys live in Vercel project env vars and reach .env.local via `vercel env pull` — the agent never writes .env* directly (project deny rule kept intact).
+- 2026-10-18 — Vercel Blob store `launchos-share` created as **private**: share links are served by an API route that reads the doc server-side, so blobs are never publicly addressable.
+- 2026-10-18 — `/install-github-app` is unavailable in the VS Code extension: review bot set up manually (Claude GitHub App + `.github/workflows/claude.yml` + repo secret).
