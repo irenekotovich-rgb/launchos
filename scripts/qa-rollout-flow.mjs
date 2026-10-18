@@ -38,7 +38,7 @@ for (const w of [390, 1440]) {
   await p.getByLabel("Why halt this stage?").fill("Ticket spike over threshold");
   await p.getByRole("button", { name: "Halt stage" }).click();
   await p.locator("#rollout").screenshot({ path: `qa-shots/rollout-halted-${w}.png` });
-  const sent = await p.getByText(/Stage message sent/).count();
+  const sent = await p.getByText(/Stage message opened/).count();
   console.log(w, { gateFailingOffersOverride: gateFail > 0, messageMarkedSent: sent > 0, halted: (await p.getByText("Halted").count()) > 0 });
   await ctx.close();
 }

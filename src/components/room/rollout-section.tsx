@@ -86,9 +86,9 @@ export function RolloutSection({ doc, now, editable = false }: { doc: LaunchDoc;
                 <>
                   <p className="text-sm">
                     {stage.notifiedAt ? (
-                      <span className="text-success">Stage message sent {fmtDay(stage.notifiedAt)}</span>
+                      <span className="text-success">Stage message opened {fmtDay(stage.notifiedAt)} — sent from your mail app</span>
                     ) : (
-                      <span className="text-warning">Stage message not sent yet</span>
+                      <span className="text-warning">Stage message not opened yet</span>
                     )}
                   </p>
                   <StageMessage
@@ -111,8 +111,8 @@ export function RolloutSection({ doc, now, editable = false }: { doc: LaunchDoc;
             {leads.map((r) => (
               <li key={r.email} className="inline-flex max-w-full items-center rounded-full border border-border py-1 pr-1 pl-3 text-xs">
                 <span className="min-w-0 break-words">
-                <span className="font-semibold">{r.name}</span>{" "}
-                <span className="text-muted-foreground">· {r.role} · {r.group === "stakeholder" ? "stakeholder" : "team lead"}</span>
+                  <span className="font-semibold">{r.name}</span>{" "}
+                  <span className="text-muted-foreground">· {r.role} · {r.group === "stakeholder" ? "stakeholder" : "team lead"}</span>
                 </span>
                 {editable && <RecipientRemove email={r.email} name={r.name} />}
               </li>

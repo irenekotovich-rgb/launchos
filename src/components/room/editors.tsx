@@ -517,6 +517,7 @@ export function StageControls({ cumulative }: { cumulative: RolloutPercent }) {
   const stage = doc.rollout.stages.find((s) => s.cumulative === cumulative)!;
   const [mode, setMode] = useState<"idle" | "override" | "halt">("idle");
   const [reason, setReason] = useState("");
+  const [note, setNote] = useState<string | null>(null);
   const id = useId();
   const gate = stage.status === "live" ? stageGate(doc, stage, new Date()) : null;
   const close = () => {
@@ -541,7 +542,7 @@ export function StageControls({ cumulative }: { cumulative: RolloutPercent }) {
   if (stage.status !== "live") return null;
 
   if (mode !== "idle") {
-    const label = mode === "override" ? "Why close despite the failing gate?" : "Why halt this stage?";
+    const label = mode === "override" ? "Why close despite the failing gate? (stage is marked overridden)" : "Why halt this stage?";
     return (
       <form
         className="flex flex-col gap-2"
@@ -567,13 +568,25 @@ export function StageControls({ cumulative }: { cumulative: RolloutPercent }) {
   return (
     <div className="flex flex-wrap gap-2">
       {gate?.passes ? (
-        <Button size="sm" onClick={() => apply((d, now) => R.completeStage(d, cumulative, now))}>
+        <Button
+          size="sm"
+          onClick={() => {
+            // Re-check at click time: a reading can go stale between render and click.
+            if (!stageGate(doc, stage, new Date()).passes) {
+              setNote("The gate stopped passing (a reading went stale). Record new readings or close with override.");
+              return;
+            }
+            setNote(null);
+            apply((d, now) => R.completeStage(d, cumulative, now));
+          }}
+        >
           {cumulative === 100 ? "Complete — rolled out to 100%" : `Complete ${cumulative}% stage`}
         </Button>
       ) : (
         <Button size="sm" variant="outline" onClick={() => setMode("override")}>Close with override…</Button>
       )}
       <Button size="sm" variant="ghost" onClick={() => setMode("halt")}>Halt…</Button>
+      <p className="w-full text-xs text-warning empty:hidden" aria-live="polite">{note ?? ""}</p>
     </div>
   );
 }
@@ -593,9 +606,12 @@ export function ReadingsForm() {
   if (!started.length || stage === undefined) {
     return <p className="mb-4 text-sm text-muted-foreground">Start the 10% stage to record metric readings.</p>;
   }
+  const NUM = /^-?\d+(\.\d+)?$/;
   const parsed = Object.fromEntries(
-    Object.entries(values).filter(([, v]) => v.trim() !== "" && Number.isFinite(Number(v))).map(([k, v]) => [k, Number(v)]),
+    Object.entries(values).filter(([, v]) => NUM.test(v.trim())).map(([k, v]) => [k, Number(v)]),
   );
+  const invalid = Object.entries(values).filter(([, v]) => v.trim() !== "" && !NUM.test(v.trim())).map(([k]) => k);
+  const closed = doc.rollout.stages.find((s) => s.cumulative === stage)?.status === "complete";
   return (
     <details className="mb-4 rounded-xl border border-border bg-background/30 p-4">
       <summary className="cursor-pointer text-sm font-semibold">Record readings</summary>
@@ -619,11 +635,19 @@ export function ReadingsForm() {
           {doc.alignment.metrics.map((m) => (
             <div key={m.id} className="flex flex-col gap-1">
               <label htmlFor={`${id}-${m.id}`} className="text-xs font-semibold">{m.name}{m.unit && ` (${m.unit})`}</label>
-              <Input id={`${id}-${m.id}`} inputMode="decimal" value={values[m.id] ?? ""} onChange={(e) => setValues({ ...values, [m.id]: e.target.value })} />
+              <Input
+                id={`${id}-${m.id}`}
+                inputMode="decimal"
+                aria-invalid={invalid.includes(m.id)}
+                value={values[m.id] ?? ""}
+                onChange={(e) => setValues({ ...values, [m.id]: e.target.value })}
+              />
+              {invalid.includes(m.id) && <span className="text-xs text-destructive">Not a number — use a dot for decimals.</span>}
             </div>
           ))}
         </div>
-        <Button type="submit" size="sm" className="self-start" disabled={!Object.keys(parsed).length}>Save readings</Button>
+        {closed && <p className="text-xs text-muted-foreground">This stage is closed — readings added now are kept for the record but don&apos;t change its gate.</p>}
+        <Button type="submit" size="sm" className="self-start" disabled={!Object.keys(parsed).length || invalid.length > 0}>Save readings</Button>
       </form>
       <form
         className="mt-4 flex flex-col gap-2 border-t border-border pt-4"
@@ -632,14 +656,18 @@ export function ReadingsForm() {
           let summary = "";
           apply((d, now) => {
             const res = R.importReadingsCsv(d, csv, now);
-            summary = `Imported ${res.imported} reading(s).${res.errors.length ? ` Skipped: ${res.errors.join(" ")}` : ""}`;
+            const shown = res.errors.slice(0, 5).join(" ");
+            const more = res.errors.length > 5 ? ` …and ${res.errors.length - 5} more.` : "";
+            summary = `Imported ${res.imported} reading(s).${res.duplicates ? ` ${res.duplicates} duplicate(s) skipped.` : ""}${res.errors.length ? ` Skipped: ${shown}${more}` : ""}`;
             return res.doc;
           });
           setNote(summary);
           setCsv("");
         }}
       >
-        <label htmlFor={`${id}-csv`} className="text-xs font-semibold">Import CSV — stage,metric,value[,recorded_at] (metric = id or exact name)</label>
+        <label htmlFor={`${id}-csv`} className="text-xs font-semibold">
+          Import CSV — stage,metric,value[,recorded_at] · metric = id or name (case-insensitive) · decimals with a dot · ISO dates
+        </label>
         <Textarea id={`${id}-csv`} rows={3} value={csv} onChange={(e) => setCsv(e.target.value)} placeholder={"stage,metric,value\n30,Support tickets per 1k workspaces,9.4"} />
         <Button type="submit" size="sm" variant="outline" className="self-start" disabled={!csv.trim()}>Import</Button>
       </form>
