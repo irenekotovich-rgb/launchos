@@ -67,10 +67,11 @@ Target: 10–15 PRs across the project, each readable in under 5 minutes.
 - Empty, loading and error states exist for every screen — no blank divs
 
 ## Design checkpoint with the owner
-Visual direction: grey metallic surfaces with a gradient into lilac; accents
-lilac and orange. When the product works end-to-end (after M3), stop once and
-ask the owner for visual references and design feedback — the one planned
-interruption besides missing credentials. Until then, build to this direction.
+Visual direction (owner's reference, 2026-10-18): Apple-style bento on a
+near-black stage — chrome-silver metal lettering, burgundy-metal tiles, glow
+warming into burgundy; wine-rose primary, orange only for attention. Minimal
+text, maximum visualisation and facts; one long page. The design checkpoint
+with the owner happened after M3; build to this direction from here on.
 
 ## Conventions
 - Conventional commits; small commits, each buildable

@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { Countdown } from "./countdown";
 import { Pill } from "./section";
 import { fmtDay, fmtDayYear } from "@/lib/format";
@@ -30,63 +31,60 @@ export function Overview({ doc, now, liveClock = true }: { doc: LaunchDoc; now: 
   const progress = progressPercent(doc);
 
   return (
-    <section id="overview" aria-labelledby="overview-title" className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3">
+    <section id="overview" aria-labelledby="overview-title" className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* Hero tile */}
+      <div className="surface flex flex-col justify-between gap-4 rounded-3xl p-6 sm:p-8 md:col-span-2">
         <div className="flex flex-wrap items-center gap-2">
           <Pill tone="info">Tier {doc.tier.tier}</Pill>
           {full ? <Pill tone="good">Rolled out to 100%</Pill> : <Pill tone="muted">{percent}% of audience live</Pill>}
         </div>
-        <h1 id="overview-title" className="break-words text-3xl font-extrabold tracking-tight sm:text-5xl">
+        <h1 id="overview-title" className="text-chrome break-words pb-[0.1em] text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-6xl">
           {doc.brief.productName}
         </h1>
-        <p className="max-w-3xl text-muted-foreground">{doc.brief.what}</p>
+        <p className="max-w-2xl text-muted-foreground">{doc.brief.what}</p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
-        <div className="surface flex flex-col gap-4 rounded-2xl p-5 sm:p-6">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Countdown to launch day</h2>
-            <p className="text-sm">
-              {slipped ? (
-                <>
-                  <span className="text-muted-foreground line-through">{fmtDayYear(doc.brief.targetDate)}</span>{" "}
-                  <span className="font-semibold text-brand-orange">now {fmtDayYear(projected)}</span>
-                </>
-              ) : (
-                <span className="font-semibold">{fmtDayYear(projected)}</span>
-              )}
-            </p>
-          </div>
-          {current && phaseState(current, current, now) === "overdue" ? (
-            <p role="status" className="text-xl font-bold text-brand-orange">
-              Launch day is slipping: {current.name} is past its ETA, so every open day moves launch by a day.
-            </p>
-          ) : (
-            <Countdown target={projected.toISOString()} initialNow={now.toISOString()} live={liveClock} />
-          )}
-          <p className="text-xs text-muted-foreground">Launch day = 100% rollout. Projection moves if the current phase runs past its ETA. Dates in UTC.</p>
+      {/* Countdown tile — burgundy metal */}
+      <div className="surface-burgundy flex flex-col gap-4 rounded-3xl p-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-white">Launch day</h2>
+          <p className="text-sm text-white">
+            {slipped ? (
+              <>
+                <span className="text-white/90 line-through">{fmtDayYear(doc.brief.targetDate)}</span>{" "}
+                {/* Orange on burgundy fails contrast; the dark pill keeps attention colour readable. */}
+                <span className="rounded-md bg-black/45 px-1.5 py-0.5 font-semibold text-brand-orange">now {fmtDayYear(projected)}</span>
+              </>
+            ) : (
+              <span className="font-semibold">{fmtDayYear(projected)}</span>
+            )}
+          </p>
         </div>
+        {current && phaseState(current, current, now) === "overdue" ? (
+          <p role="status" className="rounded-2xl bg-black/45 p-3 text-lg font-bold text-brand-orange">
+            Launch day is slipping: {current.name} is past its ETA, so every open day moves launch by a day.
+          </p>
+        ) : (
+          <Countdown target={projected.toISOString()} initialNow={now.toISOString()} live={liveClock} />
+        )}
+        <p className="text-xs text-white">100% rollout. Moves if the current phase runs late. Dates in UTC.</p>
+      </div>
 
-        <div className="surface flex flex-col gap-4 rounded-2xl p-5 sm:p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Where we are</h2>
-          <div className="flex items-end justify-between gap-4">
-            <div className="min-w-0">
-              <p className="text-sm text-muted-foreground">Current phase</p>
-              <p className="truncate text-xl font-bold">{current ? current.name : "All phases complete"}</p>
-              {current && <p className="text-sm text-muted-foreground">ETA {fmtDayYear(current.eta)}</p>}
-            </div>
-            <p className="font-mono text-3xl font-bold text-primary">{progress}%</p>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
-            <div className="h-full rounded-full bg-gradient-to-r from-primary to-brand-orange" style={{ width: `${progress}%` }} />
-          </div>
-          <p className="text-xs text-muted-foreground">Share of the six phases closed.</p>
+      {/* Where we are — chrome progress ring */}
+      <div className="surface flex items-center gap-5 rounded-3xl p-6">
+        <ProgressRing value={progress} />
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Now</p>
+          <p className="truncate text-xl font-bold" title={current?.name}>{current ? current.name : "All phases complete"}</p>
+          {current && <p className="text-sm text-muted-foreground">ETA {fmtDayYear(current.eta)}</p>}
+          <p className="mt-1 text-xs text-muted-foreground">{progress}% of phases closed</p>
         </div>
       </div>
 
-      <div className="surface rounded-2xl p-5 sm:p-6">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-muted-foreground">Phases & ETAs</h2>
-        <ol className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      {/* Phases tile */}
+      <div className="surface rounded-3xl p-6 md:col-span-2">
+        <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Phases & ETAs</h2>
+        <ol className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3">
           {doc.phases.map((p) => {
             const state = phaseState(p, current, now);
             return (
@@ -107,5 +105,40 @@ export function Overview({ doc, now, liveClock = true }: { doc: LaunchDoc; now: 
         </ol>
       </div>
     </section>
+  );
+}
+
+/** Chrome ring with a wine-rose progress arc. */
+function ProgressRing({ value }: { value: number }) {
+  const gradientId = useId();
+  const r = 34;
+  const c = 2 * Math.PI * r;
+  return (
+    <svg viewBox="0 0 84 84" className="size-24 shrink-0" role="img" aria-label={`${value}% of phases closed`}>
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="45%" stopColor="#8b8b94" />
+          <stop offset="70%" stopColor="#e9e9ee" />
+          <stop offset="100%" stopColor="#a9a9b2" />
+        </linearGradient>
+      </defs>
+      <circle cx="42" cy="42" r="40" fill="none" stroke={`url(#${gradientId})`} strokeWidth="2" />
+      <circle className="ring-track" cx="42" cy="42" r={r} fill="none" stroke="var(--muted)" strokeWidth="7" />
+      <circle
+        className="ring-arc"
+        cx="42"
+        cy="42"
+        r={r}
+        fill="none"
+        stroke="var(--primary)"
+        strokeWidth="7"
+        strokeLinecap="round"
+        strokeDasharray={c}
+        strokeDashoffset={c * (1 - value / 100)}
+        transform="rotate(-90 42 42)"
+      />
+      <text x="42" y="47" textAnchor="middle" className="fill-foreground text-[15px] font-bold">{value}%</text>
+    </svg>
   );
 }
