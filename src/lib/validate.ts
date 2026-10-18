@@ -51,5 +51,17 @@ export function sanitizeLaunchDoc(doc: LaunchDoc): LaunchDoc {
     const points = Array.isArray(f.points) ? f.points.filter((p): p is string => typeof p === "string").slice(0, 8) : undefined;
     fields[k] = { ...f, text: typeof f.text === "string" ? f.text : "", highlights, points };
   }
-  return { ...doc, analysis: { ...doc.analysis, fields } };
+  const x = doc.alignment.expected as unknown;
+  const impact = (i: unknown) =>
+    isObj(i) && typeof i.amount === "number" && Number.isFinite(i.amount)
+      ? { amount: i.amount, currency: typeof i.currency === "string" ? i.currency.slice(0, 3) : "USD", period: typeof i.period === "string" ? i.period : "", note: typeof i.note === "string" ? i.note : "" }
+      : null;
+  const expected = isObj(x)
+    ? {
+        userExperience: Array.isArray(x.userExperience) ? x.userExperience.filter((l): l is string => typeof l === "string").slice(0, 6) : [],
+        revenue: impact(x.revenue),
+        expenses: impact(x.expenses),
+      }
+    : undefined;
+  return { ...doc, analysis: { ...doc.analysis, fields }, alignment: { ...doc.alignment, expected } };
 }
