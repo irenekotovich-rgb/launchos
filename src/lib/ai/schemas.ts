@@ -1,6 +1,7 @@
 // Request/response schemas for the generation API. Limits mirror the brief form (lib/brief.ts).
 import { z } from "zod";
 import { LIMITS } from "../brief";
+import { ASSET_TYPES } from "../types";
 
 export const briefSchema = z.object({
   productName: z.string().trim().min(1).max(LIMITS.productName),
@@ -56,16 +57,18 @@ export const messagingSchema = z.object({
   avoid: z.array(z.string().max(300)).max(12),
 });
 
-const ASSET_TYPE = z.enum(["release-notes", "blog-post", "announcement-email", "linkedin-post", "sales-one-pager", "faq"]);
+const ASSET_TYPE = z.enum(ASSET_TYPES);
+/** Per-asset cap for the consistency check (the deck + demo script is the longest). */
+export const MAX_ASSET_CHARS = 9000;
 
 /** Consistency check request: brief + messaging + the assets to check. */
 export const consistencyRequest = z.object({
   brief: briefSchema.extend({ targetDate: z.iso.datetime() }), // past launch days are fine for a check
   messaging: messagingSchema,
   assets: z
-    .array(z.object({ id: z.string().max(40), type: ASSET_TYPE, title: z.string().max(200), content: z.string().max(6000) }))
+    .array(z.object({ id: z.string().max(40), type: ASSET_TYPE, title: z.string().max(200), content: z.string().max(MAX_ASSET_CHARS) }))
     .min(1)
-    .max(6),
+    .max(ASSET_TYPES.length),
 });
 
 export const consistencyOutput = z.object({
@@ -88,4 +91,6 @@ export const assetRequest = z.object({
   brief: briefSchema.extend({ targetDate: z.iso.datetime() }),
   messaging: messagingSchema,
   type: ASSET_TYPE,
+  /** Agreed metric names, so the campaign plan maps channels to real metrics instead of inventing them. */
+  metrics: z.array(z.string().max(200)).max(5).optional(),
 });

@@ -112,7 +112,7 @@ export function BriefForm() {
         </Button>
         <span className="text-sm text-muted-foreground" aria-live="polite">
           {status === "building"
-            ? "Tier, messaging, analysis drafts and six assets — usually 30–90 seconds."
+            ? "Tier, messaging, analysis drafts and eight assets — usually 30–100 seconds."
             : "The brief is sent to the configured AI models; the launch is saved only in this browser."}
         </span>
       </div>

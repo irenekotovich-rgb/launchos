@@ -17,7 +17,7 @@ function clientKey(req: Request): string {
   );
 }
 
-export const MAX_BODY_BYTES = 40_000;
+export const MAX_BODY_BYTES = 110_000; // eight assets × 9,000 chars + brief and messaging, with headroom for UTF-8 and JSON escaping
 const bytes = (s: string) => new TextEncoder().encode(s).length;
 
 export type Failure =

@@ -36,7 +36,7 @@ describe("pipeline", () => {
     expect(doc.analysis.fields.competitors.text).toBe(""); // empty drafts are not written
     expect(doc.assets[0]).toMatchObject({ id: "a-faq", status: "draft", modelId: "gemini-3.5-flash" });
     expect(doc.meta.models[0]).toMatchObject({ prompt: "brief-to-tier", promptVersion: 1 });
-    expect(doc.meta.generation?.note).toMatch(/1 of 6 assets generated; 1 failed/);
+    expect(doc.meta.generation?.note).toMatch(/1 of 8 assets generated; 1 failed/);
     expect(doc.messaging?.avoid).toContain("SOC 2 compliant");
   });
 

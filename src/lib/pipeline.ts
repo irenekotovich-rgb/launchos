@@ -1,17 +1,18 @@
 // runGeneration: brief in → LaunchDoc out. This is the interface the UI depends on.
 // 1. buildPlanDoc: deterministic plan (tier heuristic, phases, checklist, rollout) — always works.
-// 2. POST /api/generate: model-written tier, messaging, analysis drafts and six assets.
+// 2. POST /api/generate: model-written tier, messaging, analysis drafts and eight assets.
 // 3. mergeGenerated: the AI tier replaces the heuristic and the plan is re-derived from it.
 // If step 2 fails for any reason, the doc keeps the plan and records why (graceful state).
 
 import { AUTHOR } from "./author";
 import { deriveChecklist, derivePhases, deriveRollout, suggestTier } from "./plan";
-import { LAUNCH_DOC_SCHEMA_VERSION } from "./types";
+import { ASSET_TYPES, LAUNCH_DOC_SCHEMA_VERSION } from "./types";
 import type { AnalysisField, AnalysisKey, Asset, LaunchBrief, LaunchDoc, TeamKey, TeamSignoff } from "./types";
 import type { GeneratedContent } from "./ai/generate";
 import type { GenerateResponse } from "@/app/api/generate/route";
 
 const ANALYSIS_KEYS: AnalysisKey[] = ["context", "environment", "competitors", "economics", "capacity", "audience"];
+const ASSET_COUNT = ASSET_TYPES.length;
 const TEAMS: TeamKey[] = ["stakeholders", "rnd", "marketing", "sales", "support", "legal"];
 
 /** Works on non-secure origins too (e.g. a self-hosted fork on http://192.168…). */
@@ -108,8 +109,8 @@ export function mergeGenerated(doc: LaunchDoc, content: GeneratedContent, now: D
       generation: {
         status: "live",
         note: missing
-          ? `${assets.length} of 6 assets generated; ${missing} failed on every model and can be regenerated later.`
-          : "Tier, messaging, analysis drafts and six assets generated from the brief.",
+          ? `${assets.length} of ${ASSET_COUNT} assets generated; ${missing} failed on every model and can be regenerated later.`
+          : "Tier, messaging, analysis drafts and all eight assets generated from the brief.",
       },
     },
     tier: { tier, rationale: content.tier.rationale, overrideDecisionId: null },

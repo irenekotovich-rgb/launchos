@@ -1,20 +1,14 @@
-// Server-side generation: brief → tier + messaging block → analysis drafts → six assets.
+// Server-side generation: brief → tier + messaging block → analysis drafts → eight assets.
 // Every asset is generated from the same brief + messaging block (PRD §5 "Generation").
 import "server-only";
 import type { z } from "zod";
 import { GenerationUnavailable, generateStructured, modelChain } from "./models";
 import { loadPrompt, render } from "./prompts";
 import { analysisOutput, assetOutput, tierOutput, type briefSchema } from "./schemas";
+import { ASSET_TYPES } from "../types";
 import type { AssetType, Highlight, LaunchBrief, Messaging, ModelRun, Tier } from "../types";
 
-export const ASSET_TYPES: AssetType[] = [
-  "release-notes",
-  "blog-post",
-  "announcement-email",
-  "linkedin-post",
-  "sales-one-pager",
-  "faq",
-];
+export { ASSET_TYPES };
 
 export interface GeneratedContent {
   tier: { tier: Tier; rationale: string };
@@ -87,7 +81,7 @@ export function groundHighlight(h: Highlight, briefText: string): Highlight {
 }
 
 /** Small concurrency limit: free tiers rate-limit bursts. */
-async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+async function mapLimit<T, R>(items: readonly T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
   const out: R[] = new Array(items.length);
   let next = 0;
   await Promise.all(
@@ -102,17 +96,23 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
 }
 
 /** One asset from the brief + messaging block (used by the full run and by "regenerate"). */
+/** Agreed metrics as prompt text; before alignment there are none, and the prompt says so. */
+export function metricsAsText(metrics: string[] | undefined): string {
+  return metrics?.length ? metrics.map((m) => `- ${m}`).join("\n") : "- (none agreed yet — write [needs input: agreed metrics])";
+}
+
 export async function generateAsset(
   brief: LaunchBrief,
   messaging: Messaging,
   type: AssetType,
   deadline = Date.now() + 100_000,
   ranAt = new Date().toISOString(),
+  metrics?: string[],
 ): Promise<{ asset: GeneratedContent["assets"][number]; model: ModelRun }> {
   const prompt = await loadPrompt(`asset-${type}`);
   const r = await generateStructured(
     assetOutput,
-    render(prompt.body, { brief: briefAsText(brief), messaging: messagingAsText(messaging) }),
+    render(prompt.body, { brief: briefAsText(brief), messaging: messagingAsText(messaging), metrics: metricsAsText(metrics) }),
     modelChain(),
     deadline,
   );
@@ -159,7 +159,8 @@ export async function generateLaunchContent(brief: z.infer<typeof briefSchema>, 
     .catch(() => null);
 
   const failedAssets: AssetType[] = [];
-  const assetsTask = mapLimit(ASSET_TYPES, 2, async (type) => {
+  // Three in flight: eight assets must fit the request deadline; free tiers still cope with 3.
+  const assetsTask = mapLimit(ASSET_TYPES, 3, async (type) => {
     try {
       const r = await generateAsset(brief, messaging, type, deadline, ranAt);
       models.push(r.model);

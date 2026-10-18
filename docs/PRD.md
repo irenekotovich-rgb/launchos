@@ -50,7 +50,9 @@ launch, where is it, and are we ready?"
 - Timeline with phase gates derived from tier and date
 - Readiness checklist auto-derived from tier; manual check-off with notes
 - Asset kit generated from the brief: release notes, blog post, announcement
-  email, LinkedIn post, sales one-pager, FAQ
+  email, LinkedIn post, sales one-pager, FAQ, **sales deck + live demo script**
+  for the sales team, and a **campaign integration plan** (how the launch plugs
+  into the marketing campaign, channel by channel, per rollout stage)
 - **Cross-asset consistency check:** claims, numbers and terminology compared
   across all assets against the brief; drift flagged per asset
 - Decisions log: dated one-liners, part of the launch doc
