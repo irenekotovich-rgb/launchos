@@ -52,3 +52,6 @@
 - 2026-10-18 — Review PR #7: /api/generate stays unauthenticated (public demo, no accounts); guards are body size cap (16KB), schema incl. future launch day, throttle and daily cap.
 - 2026-10-18 — Review PR #7: prompts v2 — brief fenced as data (live run: injected "invent an Acme quote" ignored); analysis writes "Needs your input:" for competitors/economics/capacity instead of guessing; assets use `[needs input: …]` markers rather than inventing material.
 - 2026-10-18 — Review PR #7: normalizeText also rewrites a legitimate literal "\n" in model text — accepted for marketing copy.
+- 2026-10-18 — Own launches are editable in place (checklist, analysis, alignment incl. metrics and sign-offs, phase close, decisions, recipients); edits are pure functions in lib/edit.ts, persisted to localStorage on every change. The demo stays read-only.
+- 2026-10-18 — Locking alignment requires a problem statement, ≥1 success and ≥1 failure metric and all six sign-offs; it freezes alignment edits, logs a decision and closes the alignment phase (its gate).
+- 2026-10-18 — Editing an AI-drafted analysis field makes it the PMM's text (label drops "AI draft"). Only PMM-authored decisions are editable; system-logged ones are not.
