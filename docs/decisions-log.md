@@ -24,3 +24,8 @@
 - 2026-10-18 — Review PR #3: projected launch day now also carries the slip of the most recently closed phase, so a late close stays visible after it closes (was: current phase only).
 - 2026-10-18 — Review PR #3: rollout gate never passes with zero failure metrics; overrides are reported as `overridden`, not as a pass. Signoffs stored as a team-keyed record; rollout increment derived, not stored.
 - 2026-10-18 — Review PR #3: deferred `briefHash`-derived staleness to M3 (consistency checker owns it) and stripping recipients/sign-off names from share links to the share-link PR (M3).
+- 2026-10-18 — shadcn base-nova registry components import the unrelated npm `cn` package; after every `shadcn add`, remove `cn` and point imports at `@/lib/utils`.
+- 2026-10-18 — Review PR #4: single theme — brand palette moved to `:root`; `--accent` kept neutral (shadcn hover/focus fill) and orange exposed as `--brand-orange`. Palette contrast now enforced by a Vitest check over globals.css.
+- 2026-10-18 — Review PR #4: launch day = 09:00 local on the picked date, used for both validation and the stored brief; dates capped at 3 years out.
+- 2026-10-18 — Review PR #4: placeholder tier heuristic knowingly uses runway as an input (inverted vs. tier → runway); replaced by the model step in M2. Short runways show an explicit compression warning.
+- 2026-10-18 — Review PR #4: kept the `/demo` header link although it 404s until the launch-room PR, which is next in the queue.

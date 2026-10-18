@@ -1,8 +1,7 @@
 // Author attribution is a hard requirement (CLAUDE.md): every page renders this footer.
-export const AUTHOR = {
-  name: "Iryna Kotovych",
-  url: "https://www.linkedin.com/in/irynakotovych/",
-} as const;
+import { AUTHOR } from "@/lib/author";
+
+export { AUTHOR };
 
 export function AuthorCredit() {
   return (

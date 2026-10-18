@@ -27,6 +27,9 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-brand-orange: var(--brand-orange);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -49,73 +52,51 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  /* Brand: grey metallic surfaces with a gradient into lilac; accents lilac + orange.
+     Body text on --background ≥ 7:1, muted ≥ 4.5:1 (checked in visual QA). */
+  --background: #1d1f24;
+  --foreground: #eef0f4;
+  --card: #272a31;
+  --card-foreground: #eef0f4;
+  --popover: #2c2f37;
+  --popover-foreground: #eef0f4;
+  --primary: #c6b4ff;
+  --primary-foreground: #1c1630;
+  --secondary: #343842;
+  --secondary-foreground: #eef0f4;
+  --muted: #2f323a;
+  --muted-foreground: #aab0bc;
+  /* shadcn uses --accent for hover/focus fills, so it stays neutral; orange is --brand-orange. */
+  --accent: #343842;
+  --accent-foreground: #eef0f4;
+  --brand-orange: #ffa24c;
+  --brand-glow: rgb(150 120 230 / 38%);
+  --metal-hi: #2b2e34;
+  --metal-mid: #23252b;
+  --metal-lo: #2a2440;
+  --destructive: #ff7a7a;
+  --success: #6fdc9b;
+  --warning: #ffc069;
+  --border: rgb(255 255 255 / 11%);
+  --input: rgb(255 255 255 / 16%);
+  --ring: #c6b4ff;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --chart-1: #c6b4ff;
+  --chart-2: #ffa24c;
+  --chart-3: #8fd3ff;
+  --chart-4: #6fdc9b;
+  --chart-5: #ff7a7a;
+  --sidebar: #272a31;
+  --sidebar-foreground: #eef0f4;
+  --sidebar-primary: #c6b4ff;
+  --sidebar-primary-foreground: #1c1630;
+  --sidebar-accent: #343842;
+  --sidebar-accent-foreground: #eef0f4;
+  --sidebar-border: rgb(255 255 255 / 11%);
+  --sidebar-ring: #c6b4ff;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
+/* Single theme (decisions-log): the brand palette lives in :root; .dark adds nothing. */
 
 @layer base {
   * {
@@ -126,5 +107,35 @@
   }
   html {
     @apply font-sans;
+    background-color: var(--background);
+  }
+}
+
+@layer components {
+  /* Page backdrop: brushed graphite that warms into lilac toward the bottom-right. */
+  .bg-metal {
+    background:
+      radial-gradient(120% 80% at 100% 100%, var(--brand-glow) 0%, transparent 60%),
+      linear-gradient(160deg, var(--metal-hi) 0%, var(--metal-mid) 40%, var(--background) 70%, var(--metal-lo) 100%);
+    background-color: var(--background);
+    /* No background-attachment: fixed — it leaves full-page captures and iOS Safari white below the fold. */
+  }
+  /* Metallic card surface with a subtle top highlight. */
+  .surface {
+    background: linear-gradient(180deg, rgb(255 255 255 / 6%) 0%, rgb(255 255 255 / 2%) 100%), var(--card);
+    border: 1px solid var(--border);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 7%), 0 8px 24px rgb(0 0 0 / 25%);
+  }
+  .text-gradient {
+    background: linear-gradient(90deg, var(--foreground) 0%, var(--primary) 60%, var(--brand-orange) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  @media (forced-colors: active) {
+    .text-gradient {
+      background: none;
+      color: CanvasText;
+    }
   }
 }
