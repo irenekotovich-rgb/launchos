@@ -14,12 +14,24 @@ describe("prompt files", () => {
     it(`${name} has a version and renders with brief + messaging`, async () => {
       const p = await loadPrompt(name);
       expect(p.version).toBeGreaterThan(0);
-      const out = render(p.body, { brief: "BRIEF", messaging: "MESSAGING", assets: "ASSETS" });
+      const out = render(p.body, { brief: "BRIEF", messaging: "MESSAGING", assets: "ASSETS", metrics: "METRICS" });
       expect(out).toContain("BRIEF");
       expect(out).not.toMatch(/\{\{\w+\}\}/);
     });
   }
   it("fails loudly on a missing variable", () => {
     expect(() => render("Hi {{name}}", {})).toThrow(/Missing prompt variable: name/);
+  });
+});
+
+describe("asset kit has one source of truth (review PR #15)", async () => {
+  const { ASSET_TYPES } = await import("../types");
+  const { ASSET_LABEL } = await import("../asset-labels");
+  it("every asset type has a label and a versioned prompt file", async () => {
+    expect(Object.keys(ASSET_LABEL).sort()).toEqual([...ASSET_TYPES].sort());
+    for (const t of ASSET_TYPES) expect((await loadPrompt(`asset-${t}`)).version).toBeGreaterThan(0);
+  });
+  it("the campaign plan prompt receives the agreed metrics", async () => {
+    expect((await loadPrompt("asset-campaign-plan")).body).toContain("{{metrics}}");
   });
 });

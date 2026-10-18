@@ -1,17 +1,9 @@
 import { AssetActions, RegenerateAsset } from "./editors";
+import { ASSET_LABEL } from "@/lib/asset-labels";
 import { EmptyState, Pill, Section } from "./section";
 import type { Asset, AssetStatus, AssetType, ConsistencyFinding, LaunchDoc } from "@/lib/types";
 
-const ASSET_LABEL: Record<AssetType, string> = {
-  "release-notes": "release notes",
-  "blog-post": "blog post",
-  "announcement-email": "announcement email",
-  "linkedin-post": "LinkedIn post",
-  "sales-one-pager": "sales one-pager",
-  faq: "FAQ",
-  "sales-deck": "sales deck & demo script",
-  "campaign-plan": "campaign integration plan",
-};
+
 
 const STATUS: Record<AssetStatus, { label: string; tone: "good" | "warn" | "bad" | "info" }> = {
   ok: { label: "On brief", tone: "good" },

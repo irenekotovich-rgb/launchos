@@ -9,7 +9,7 @@ import type { AssetResponse } from "@/app/api/asset/route";
 import type { ConsistencyResponse } from "@/app/api/consistency/route";
 
 /** Limits mirror lib/ai/schemas.ts consistencyRequest. */
-const MAX_ASSET_CHARS = 6000;
+const MAX_ASSET_CHARS = 9000;
 
 /**
  * The messaging block to send. If it's missing (generation was unavailable) or stale (the brief was
@@ -63,7 +63,8 @@ export async function runConsistencyCheck(doc: LaunchDoc, fetcher: typeof fetch 
 
 export async function regenerateAsset(doc: LaunchDoc, type: AssetType, fetcher: typeof fetch = fetch): Promise<Result> {
   const brief = briefKey(doc);
-  const res = await post<AssetResponse>("/api/asset", { brief: doc.brief, messaging: messagingOrBrief(doc), type }, fetcher);
+  const metrics = doc.alignment.metrics.map((m) => `${m.name} (${m.kind})`).slice(0, 5);
+  const res = await post<AssetResponse>("/api/asset", { brief: doc.brief, messaging: messagingOrBrief(doc), type, metrics }, fetcher);
   if (res.status !== "ok" || !("result" in res)) return { ok: false, message: failMessage(res) };
   const { asset, model } = res.result;
   return { ok: true, brief, edit: (d, now) => replaceAsset(d, asset, model, now) };

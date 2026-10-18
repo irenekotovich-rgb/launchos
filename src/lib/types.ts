@@ -257,17 +257,22 @@ export interface Rollout {
 
 // ---------------------------------------------------------------- assets & consistency
 
-export type AssetType =
-  | "release-notes"
-  | "blog-post"
-  | "announcement-email"
-  | "linkedin-post"
-  | "sales-one-pager"
-  | "faq"
-  /** Slide outline + live demo script for the sales team. */
-  | "sales-deck"
-  /** How the launch plugs into the marketing campaign, channel by channel and stage by stage. */
-  | "campaign-plan";
+/**
+ * The asset kit — the single source for the type union, the API enum, limits and generation order.
+ * The two longest outputs come first so they get the most time before the request deadline.
+ */
+export const ASSET_TYPES = [
+  "sales-deck", // slide outline + live demo script for the sales team
+  "campaign-plan", // how the launch plugs into the marketing campaign, per channel and rollout stage
+  "release-notes",
+  "blog-post",
+  "announcement-email",
+  "linkedin-post",
+  "sales-one-pager",
+  "faq",
+] as const;
+
+export type AssetType = (typeof ASSET_TYPES)[number];
 
 export type AssetStatus = "generating" | "draft" | "stale" | "ok";
 

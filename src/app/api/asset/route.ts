@@ -16,8 +16,8 @@ export async function POST(req: Request) {
   const slot = await reserve(req, RUN_COST.asset);
   if (!slot.ok) return slot.res;
   try {
-    const { brief, messaging, type } = body.data;
-    return NextResponse.json<AssetResponse>({ status: "ok", result: await generateAsset(brief, messaging, type) });
+    const { brief, messaging, type, metrics } = body.data;
+    return NextResponse.json<AssetResponse>({ status: "ok", result: await generateAsset(brief, messaging, type, undefined, undefined, metrics) });
   } catch (err) {
     await slot.refund();
     console.warn("[asset] failed", err);

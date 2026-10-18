@@ -6,14 +6,13 @@
 
 import { AUTHOR } from "./author";
 import { deriveChecklist, derivePhases, deriveRollout, suggestTier } from "./plan";
-import { LAUNCH_DOC_SCHEMA_VERSION } from "./types";
+import { ASSET_TYPES, LAUNCH_DOC_SCHEMA_VERSION } from "./types";
 import type { AnalysisField, AnalysisKey, Asset, LaunchBrief, LaunchDoc, TeamKey, TeamSignoff } from "./types";
 import type { GeneratedContent } from "./ai/generate";
 import type { GenerateResponse } from "@/app/api/generate/route";
 
 const ANALYSIS_KEYS: AnalysisKey[] = ["context", "environment", "competitors", "economics", "capacity", "audience"];
-/** release notes, blog, email, LinkedIn, one-pager, FAQ, sales deck + demo script, campaign plan */
-const ASSET_COUNT = 8;
+const ASSET_COUNT = ASSET_TYPES.length;
 const TEAMS: TeamKey[] = ["stakeholders", "rnd", "marketing", "sales", "support", "legal"];
 
 /** Works on non-secure origins too (e.g. a self-hosted fork on http://192.168…). */
