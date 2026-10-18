@@ -29,3 +29,5 @@
 - 2026-10-18 — Review PR #4: launch day = 09:00 local on the picked date, used for both validation and the stored brief; dates capped at 3 years out.
 - 2026-10-18 — Review PR #4: placeholder tier heuristic knowingly uses runway as an input (inverted vs. tier → runway); replaced by the model step in M2. Short runways show an explicit compression warning.
 - 2026-10-18 — Review PR #4: kept the `/demo` header link although it 404s until the launch-room PR, which is next in the queue.
+- 2026-10-18 — Suggestions UX: max 2 compact popups on desktop with "N more"; phones start minimised to a "N suggestions" pill so the room stays readable. Dismissals persist per launch in localStorage (convenience only).
+- 2026-10-18 — Demo `?now=` override (evaluate the demo at another moment) only works in dev or with LAUNCHOS_QA=1 — used for visual QA of overdue/stale states, never on the hosted demo.
