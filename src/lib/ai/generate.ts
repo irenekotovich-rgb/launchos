@@ -128,7 +128,16 @@ export async function generateLaunchContent(brief: z.infer<typeof briefSchema>, 
   const analysisTask = generateStructured(analysisOutput, render(analysisPrompt.body, { brief: briefText }), chain, deadline)
     .then((r) => {
       models.push({ step: "analysis", modelId: r.modelId, ranAt, prompt: analysisPrompt.name, promptVersion: analysisPrompt.version });
-      return Object.fromEntries(Object.entries(r.object).map(([k, v]) => [k, normalizeText(v)])) as typeof r.object;
+      return Object.fromEntries(
+        Object.entries(r.object).map(([k, v]) => [
+          k,
+          {
+            summary: normalizeText(v.summary),
+            highlights: v.highlights.map((h) => ({ ...h, value: normalizeText(h.value), label: normalizeText(h.label) })),
+            points: v.points.map(normalizeText).filter(Boolean),
+          },
+        ]),
+      ) as typeof r.object;
     })
     .catch(() => null);
 
