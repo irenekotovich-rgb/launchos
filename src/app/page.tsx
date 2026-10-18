@@ -47,7 +47,7 @@ export default function Home() {
             {STAGES.map((stage, i) => (
               <li key={stage.name} className="surface rounded-xl p-5">
                 <div className="flex items-baseline gap-3">
-                  <span className="font-mono text-sm text-accent">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="font-mono text-sm text-brand-orange">{String(i + 1).padStart(2, "0")}</span>
                   <h3 className="font-semibold">{stage.name}</h3>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">{stage.detail}</p>
