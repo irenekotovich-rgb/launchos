@@ -208,7 +208,10 @@ export function setShareInfo(doc: LaunchDoc, share: LaunchDoc["meta"]["share"] |
   return touch({ ...doc, meta: share ? { ...meta, share } : meta }, now);
 }
 
-/** An imported file becomes a fresh own launch: new id, no share secrets, export-only fields dropped. */
+/**
+ * An imported file becomes a fresh launch in this browser: new id, no share secrets, export-only
+ * fields dropped. A demo export stays labelled demo (fictional content is never relabelled as own).
+ */
 export function prepareImport(raw: unknown, newId: string, now: Date): LaunchDoc | null {
   if (!isLaunchDoc(raw)) return null;
   const { author: _a, exportedAt: _e, ...doc } = raw as LaunchDoc & { author?: unknown; exportedAt?: unknown };
@@ -217,6 +220,6 @@ export function prepareImport(raw: unknown, newId: string, now: Date): LaunchDoc
   const { share: _s, sharedAt: _sa, ...meta } = doc.meta;
   void _s;
   void _sa;
-  const imported: LaunchDoc = { ...doc, meta: { ...meta, id: newId, mode: "own", updatedAt: now.toISOString() } };
+  const imported: LaunchDoc = { ...doc, meta: { ...meta, id: newId, mode: meta.mode === "demo" ? "demo" : "own", updatedAt: now.toISOString() } };
   return logDecision(imported, "Launch imported from a JSON file.", now, "LaunchOS");
 }
