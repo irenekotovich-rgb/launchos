@@ -14,3 +14,4 @@
 - 2026-10-18 — Secrets flow: keys live in Vercel project env vars and reach .env.local via `vercel env pull` — the agent never writes .env* directly (project deny rule kept intact).
 - 2026-10-18 — Vercel Blob store `launchos-share` created as **private**: share links are served by an API route that reads the doc server-side, so blobs are never publicly addressable.
 - 2026-10-18 — `/install-github-app` is unavailable in the VS Code extension: review bot set up manually (Claude GitHub App + `.github/workflows/claude.yml` + repo secret).
+- 2026-10-18 — Review PR #2: keep committing /qa-shots (kickoff "Done" requires them in the repo; PR images link to them). Accepted cost: PNG churn in history.
