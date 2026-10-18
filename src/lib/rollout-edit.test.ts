@@ -24,7 +24,7 @@ describe("rollout edits", () => {
     expect(next.rollout.stages[1]).toMatchObject({ status: "complete", overrideDecisionId: null });
     expect(next.rollout.stages[2].status).toBe("live");
     expect(next.decisions.slice(-2).map((d) => d.text)).toEqual([
-      "30% stage complete — no failure metric breached.",
+      "30% stage complete — gate passed, no failure metric breached.",
       "60% rollout stage started (+30% of audience).",
     ]);
   });
@@ -78,20 +78,50 @@ describe("rollout edits", () => {
     const csv = [
       "stage,metric,value,recorded_at",
       "30%,f-tickets,11.2",
-      "30,Median release approval time,4.1,2026-10-18T07:00:00Z",
+      "30,median release approval time,4.1,2026-10-18T07:00:00Z",
       "60,f-tickets,3",
       "30,unknown metric,1",
       "30,f-latency,fast",
       "40,f-latency,900",
-    ].join("\n");
+    ].join("\r\n");
     const res = R.importReadingsCsv(demo(), csv, NOW);
     expect(res.imported).toBe(2);
     expect(res.errors).toEqual([
       "Line 4: the 60% stage hasn't started.",
       'Line 5: unknown metric "unknown metric".',
-      'Line 6: "fast" is not a number.',
+      'Line 6: "fast" is not a number (use a dot for decimals).',
       'Line 7: unknown stage "40".',
     ]);
     expect(res.doc.rollout.stages[1].readings.slice(-2).map((r) => r.metricId)).toEqual(["f-tickets", "s-approval-time"]);
+  });
+});
+
+describe("CSV strictness (review PR #10)", () => {
+  it("rejects decimal commas instead of mis-parsing them as a date", () => {
+    const res = R.importReadingsCsv(demo(), "30,f-tickets,9,4", NOW);
+    expect(res.imported).toBe(0);
+    expect(res.errors[0]).toMatch(/Line 1: expected 3–4 columns, got 4|is not an ISO date/);
+  });
+  it("quoted names with commas, file line numbers across blank lines, strict numbers", () => {
+    const res = R.importReadingsCsv(demo(), ['30,"Approval support tickets per 1k workspaces",9.4', "", "30,f-tickets,0x10", "0x1E,f-tickets,1"].join("\n"), NOW);
+    expect(res.imported).toBe(1);
+    expect(res.errors).toEqual(['Line 3: "0x10" is not a number (use a dot for decimals).', 'Line 4: unknown stage "0x1E".']);
+  });
+  it("rejects future dates and dates before the stage started; skips duplicates", () => {
+    const doc = demo();
+    const started = doc.rollout.stages[1].startedAt!;
+    const before = new Date(Date.parse(started) - 86_400_000).toISOString();
+    const res = R.importReadingsCsv(doc, `30,f-tickets,9,2099-01-01\n30,f-tickets,9,${before}`, NOW);
+    expect(res.errors).toEqual(["Line 1: date is in the future.", "Line 2: date is before the 30% stage started."]);
+    const once = R.importReadingsCsv(doc, "30,f-tickets,9.1,2026-10-18T08:30:00Z", NOW);
+    const twice = R.importReadingsCsv(once.doc, "30,f-tickets,9.1,2026-10-18T08:30:00Z", NOW);
+    expect(twice).toMatchObject({ imported: 0, duplicates: 1 });
+  });
+  it("header-only and empty input import nothing without errors", () => {
+    expect(R.importReadingsCsv(demo(), "stage,metric,value", NOW)).toMatchObject({ imported: 0, errors: [] });
+    expect(R.importReadingsCsv(demo(), "", NOW)).toMatchObject({ imported: 0, errors: [] });
+  });
+  it("splitCsvLine handles escaped quotes", () => {
+    expect(R.splitCsvLine('30,"Say ""hi"", please",1')).toEqual(["30", 'Say "hi", please', "1"]);
   });
 });

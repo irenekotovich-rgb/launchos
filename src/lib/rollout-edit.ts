@@ -42,11 +42,12 @@ export function completeStage(doc: LaunchDoc, c: RolloutPercent, now: Date, over
     overrideDecisionId = next.decisions.at(-1)!.id;
   }
   next = setStage(next, c, { status: "complete", completedAt: now.toISOString(), overrideDecisionId }, now);
+  // One completion line for both paths, so the log reads the same whether the gate passed or was overridden.
+  next = logDecision(next, `${c}% stage complete — ${gate.passes ? "gate passed, no failure metric breached" : "gate overridden"}.`, now);
   if (c === 100) {
     next = logDecision(next, "Rolled out to 100% of the audience.", now);
     return completePhase(next, "rollout", now);
   }
-  next = logDecision(next, `${c}% stage complete${gate.passes ? " — no failure metric breached" : ""}.`, now);
   const following = doc.rollout.stages.find((s) => s.cumulative > c)!;
   return startStage(next, following.cumulative, now);
 }
@@ -82,33 +83,82 @@ export function addReadings(doc: LaunchDoc, c: RolloutPercent, values: Record<st
 export interface CsvResult {
   doc: LaunchDoc;
   imported: number;
+  duplicates: number;
   errors: string[];
 }
 
+/** Splits one CSV line, honouring double quotes ("Tickets, per 1k" stays one cell; "" escapes a quote). */
+export function splitCsvLine(line: string): string[] {
+  const cells: string[] = [];
+  let cur = "";
+  let quoted = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (quoted) {
+      if (ch === '"' && line[i + 1] === '"') {
+        cur += '"';
+        i++;
+      } else if (ch === '"') quoted = false;
+      else cur += ch;
+    } else if (ch === '"') quoted = true;
+    else if (ch === ",") {
+      cells.push(cur.trim());
+      cur = "";
+    } else cur += ch;
+  }
+  cells.push(cur.trim());
+  return cells;
+}
+
+const STAGE_CELL = /^(10|30|60|100)%?$/;
+const NUMBER_CELL = /^-?\d+(\.\d+)?$/;
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$/;
+
 /**
- * CSV import: `stage,metric,value[,recorded_at]` with a header row optional.
- * `stage` is 10/30/60/100 (a trailing % is fine); `metric` is a metric id or its exact name.
+ * CSV import: `stage,metric,value[,recorded_at]`, header row optional.
+ * - stage: 10/30/60/100 (trailing % fine) · metric: id (exact) or name (case-insensitive)
+ * - value: plain decimal with a dot (`9.4`, not `9,4`) · recorded_at: ISO date, within the stage
+ * Line numbers in errors are file lines. Identical rows already recorded are skipped.
  */
 export function importReadingsCsv(doc: LaunchDoc, csv: string, now: Date): CsvResult {
   const errors: string[] = [];
-  const byName = new Map(doc.alignment.metrics.map((m) => [m.name.toLowerCase(), m.id]));
   const ids = new Set(doc.alignment.metrics.map((m) => m.id));
+  const byName = new Map<string, string | null>();
+  for (const m of doc.alignment.metrics) {
+    const k = m.name.toLowerCase();
+    byName.set(k, byName.has(k) ? null : m.id); // ambiguous names (case-only difference) can't be used
+  }
   const additions = new Map<RolloutPercent, MetricReading[]>();
-  const lines = csv.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  lines.forEach((line, i) => {
-    const cells = line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
-    if (i === 0 && /stage/i.test(cells[0])) return; // header
+  let duplicates = 0;
+  const seen = new Set(
+    doc.rollout.stages.flatMap((s) => s.readings.map((r) => `${s.cumulative}|${r.metricId}|${r.value}|${Date.parse(r.recordedAt)}`)),
+  );
+  const lines = csv.split(/\r?\n/).map((text, i) => ({ text: text.trim(), no: i + 1 })).filter((l) => l.text);
+  lines.forEach(({ text, no }, idx) => {
+    const cells = splitCsvLine(text);
+    if (idx === 0 && /^stage$/i.test(cells[0])) return; // header
+    const err = (m: string) => void errors.push(`Line ${no}: ${m}`);
+    if (cells.length < 3 || cells.length > 4) return err(`expected 3–4 columns, got ${cells.length} (use a dot for decimals, quote names with commas).`);
     const [stageRaw, metricRaw, valueRaw, dateRaw] = cells;
-    const c = Number(stageRaw?.replace("%", "")) as RolloutPercent;
-    const stage = doc.rollout.stages.find((s) => s.cumulative === c);
-    const metricId = ids.has(metricRaw) ? metricRaw : byName.get(metricRaw?.toLowerCase() ?? "");
+    if (!STAGE_CELL.test(stageRaw)) return err(`unknown stage "${stageRaw}".`);
+    const c = Number(stageRaw.replace("%", "")) as RolloutPercent;
+    const stage = doc.rollout.stages.find((s) => s.cumulative === c)!;
+    if (stage.status === "not-started" || !stage.startedAt) return err(`the ${c}% stage hasn't started.`);
+    const metricId = ids.has(metricRaw) ? metricRaw : byName.get(metricRaw.toLowerCase());
+    if (metricId === null) return err(`metric name "${metricRaw}" is ambiguous — use its id.`);
+    if (!metricId) return err(`unknown metric "${metricRaw}".`);
+    if (!NUMBER_CELL.test(valueRaw)) return err(`"${valueRaw}" is not a number (use a dot for decimals).`);
+    let recordedAt = now;
+    if (dateRaw) {
+      if (!ISO_DATE.test(dateRaw) || Number.isNaN(Date.parse(dateRaw))) return err(`"${dateRaw}" is not an ISO date (YYYY-MM-DD).`);
+      recordedAt = new Date(dateRaw);
+      if (recordedAt.getTime() > now.getTime()) return err("date is in the future.");
+      if (recordedAt.getTime() < Date.parse(stage.startedAt)) return err(`date is before the ${c}% stage started.`);
+    }
     const value = Number(valueRaw);
-    const recordedAt = dateRaw ? new Date(dateRaw) : now;
-    if (!stage) return errors.push(`Line ${i + 1}: unknown stage "${stageRaw}".`);
-    if (stage.status === "not-started") return errors.push(`Line ${i + 1}: the ${c}% stage hasn't started.`);
-    if (!metricId) return errors.push(`Line ${i + 1}: unknown metric "${metricRaw}".`);
-    if (valueRaw === undefined || valueRaw === "" || !Number.isFinite(value)) return errors.push(`Line ${i + 1}: "${valueRaw}" is not a number.`);
-    if (Number.isNaN(recordedAt.getTime()) || recordedAt.getTime() > now.getTime()) return errors.push(`Line ${i + 1}: invalid or future date.`);
+    const key = `${c}|${metricId}|${value}|${recordedAt.getTime()}`;
+    if (seen.has(key)) return void duplicates++;
+    seen.add(key);
     additions.set(c, [...(additions.get(c) ?? []), { metricId, value, recordedAt: recordedAt.toISOString() }]);
   });
   let next = doc;
@@ -117,5 +167,5 @@ export function importReadingsCsv(doc: LaunchDoc, csv: string, now: Date): CsvRe
     imported += readings.length;
     next = setStage(next, c, { readings: [...stageOf(next, c).readings, ...readings] }, now);
   }
-  return { doc: next, imported, errors };
+  return { doc: next, imported, duplicates, errors };
 }
