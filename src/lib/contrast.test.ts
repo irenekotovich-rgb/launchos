@@ -34,3 +34,15 @@ describe("palette contrast (CLAUDE.md: body ≥ 4.5:1)", () => {
     expect(ratio(token("primary-foreground"), token("primary"))).toBeGreaterThanOrEqual(4.5);
   });
 });
+
+describe("text on the burgundy metal tile (worst case = lightest gradient stop + sheen)", () => {
+  const lightest = css.match(/radial-gradient\(120% 90% at 20% 0%, (#[0-9a-f]{6})/i)![1];
+  // 10% white sheen over the lightest stop.
+  const mix = (hex: string, over: string, a: number) =>
+    "#" + [1, 3, 5].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * (1 - a) + parseInt(over.slice(i, i + 2), 16) * a).toString(16).padStart(2, "0")).join("");
+  const surface = mix(lightest, "#ffffff", 0.1);
+  it("solid white small text ≥ 4.5", () => expect(ratio("#ffffff", surface)).toBeGreaterThanOrEqual(4.5));
+  it("orange attention text on the dark pill (black/45) ≥ 4.5", () => {
+    expect(ratio(token("brand-orange"), mix(surface, "#000000", 0.45))).toBeGreaterThanOrEqual(4.5);
+  });
+});

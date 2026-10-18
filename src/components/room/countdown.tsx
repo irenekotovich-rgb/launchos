@@ -30,10 +30,10 @@ export function Countdown({ target, initialNow, live = true }: { target: string;
     <div className="grid grid-cols-4 gap-2" role="timer" aria-label={`${c.days} days ${c.hours} hours to launch`}>
       {cells.map((cell) => (
         <div key={cell.l} className="rounded-2xl border border-white/15 bg-black/35 px-1 py-3 text-center shadow-[inset_0_1px_0_rgb(255_255_255/0.12)]">
-          <b className="text-chrome block font-mono text-3xl font-extrabold tabular-nums">
+          <b className="text-chrome block font-mono text-2xl font-extrabold tabular-nums sm:text-3xl">
             {cell.l === "days" ? cell.v : String(cell.v).padStart(2, "0")}
           </b>
-          <span className="text-[11px] uppercase tracking-wider text-white/75">{cell.l}</span>
+          <span className="text-xs uppercase tracking-wider text-white">{cell.l}</span>
         </div>
       ))}
     </div>

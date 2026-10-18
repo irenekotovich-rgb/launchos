@@ -141,30 +141,28 @@
     border: 1px solid rgb(255 200 210 / 18%);
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%), 0 12px 32px rgb(60 10 20 / 45%);
   }
-  /* Chrome lettering: polished silver with a hard mid-band reflection. */
+  /* Chrome lettering: polished silver with a hard mid-band reflection. Plain text where clip isn't supported. */
   .text-chrome {
-    background: var(--chrome);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: var(--foreground);
   }
-  /* Chrome ring/border accent for circular elements. */
-  .ring-chrome {
-    background: var(--chrome);
-    padding: 2px;
-    border-radius: 9999px;
-  }
-  .text-gradient {
-    background: linear-gradient(90deg, #ffffff 0%, #d9d9de 40%, var(--primary) 75%, #b5566b 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+  @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    .text-chrome {
+      background: var(--chrome);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
   }
   @media (forced-colors: active) {
-    .text-gradient,
     .text-chrome {
       background: none;
       color: CanvasText;
+    }
+    .ring-track {
+      stroke: GrayText;
+    }
+    .ring-arc {
+      stroke: Highlight;
     }
   }
 }

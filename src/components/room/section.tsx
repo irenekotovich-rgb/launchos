@@ -17,7 +17,7 @@ export function Section({
   return (
     <section id={id} aria-labelledby={`${id}-title`} className={cn("surface scroll-mt-6 rounded-3xl p-5 sm:p-7", className)}>
       <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id={`${id}-title`} className="text-chrome text-2xl font-extrabold tracking-tight">{title}</h2>
+        <h2 id={`${id}-title`} className="text-chrome pb-[0.1em] text-2xl font-extrabold leading-tight tracking-tight">{title}</h2>
         {kicker && <p className="text-sm text-muted-foreground">{kicker}</p>}
       </div>
       {children}
