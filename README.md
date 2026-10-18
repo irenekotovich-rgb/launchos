@@ -6,8 +6,9 @@ LaunchOS is an open-source **launch room**: a single page that holds everything
 about a product or feature launch — the analysis, the problem & metrics
 agreement between teams, the brief, the launch tier, the timeline with gates
 and ETAs, the readiness checklist, the staged rollout (10 → 30 → 60 → 100%),
-the metrics dashboard, the full generated asset kit (release
-notes, blog, email, LinkedIn post, sales one-pager, FAQ) and the decisions log.
+the metrics dashboard, the full generated asset kit (release notes, blog,
+email, LinkedIn post, sales one-pager, FAQ, sales deck + demo script, campaign
+integration plan) and the decisions log.
 One brief in → the whole kit out, and a consistency checker flags any asset
 that drifts from the brief.
 
@@ -32,7 +33,6 @@ API key, and run your real launches privately on your own tokens (BYO-key).
 | `kickoff-prompt.md` | The prompts that drive the build: one intake interview, then milestones M1–M4 hands-off | Reproducibility: anyone can see exactly how this was built |
 | `.claude/settings.json` | Pre-approved permissions for Claude Code | Lets agents install, commit, open and merge PRs without interrupting the owner |
 | `.env.example` | Template for API keys (Gemini, OpenRouter, PostHog) | BYO-key: copy to `.env.local`, fill in, never committed |
-| `design-reference.html` | Static prototype of the launch-room screen | Early layout prototype (countdown, timeline, readiness ring); colors superseded by the grey-metallic → lilac direction |
 | *(created in M1+)* `src/`, `prompts/`, `qa-shots/` | App code; versioned LLM prompts incl. the consistency rubric; visual QA screenshots | Prompts are product artifacts, not code internals; QA shots prove every screen was looked at |
 
 ## How this was built
@@ -45,10 +45,23 @@ history and `docs/decisions-log.md`.
 ## Run it with your own keys (BYO-key)
 ```bash
 git clone <this repo> && cd launchos
-cp .env.example .env.local   # fill in your keys
+cp .env.example .env.local   # fill in your keys — see "Environment variables" below
 npm install && npm run dev
 ```
 Your launches, your tokens, your data — nothing leaves your deployment.
+
+## Environment variables
+All optional — without model keys the app still works and shows a graceful "generation unavailable" state.
+
+| Variable | Used for |
+|---|---|
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Primary model (Gemini) |
+| `OPENROUTER_API_KEY` | Fallback models (OpenRouter free tier) |
+| `LAUNCHOS_PRIMARY_MODEL` / `LAUNCHOS_FALLBACK_MODELS` | Override model ids (comma-separated fallbacks) |
+| `BLOB_READ_WRITE_TOKEN` | Share links + daily budget counter (Vercel Blob); in-memory without it |
+| `LAUNCHOS_DAILY_LIVE_RUNS` | Daily live-generation cap (default 25, `0` = unlimited) |
+| `LAUNCHOS_RUNS_PER_CLIENT_HOUR` | Per-client hourly cap (default 3, `0` = off) |
+| `NEXT_PUBLIC_POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_HOST` | Product analytics (PostHog) |
 
 ## License
 MIT © 2026 Iryna Kotovych
