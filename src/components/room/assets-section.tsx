@@ -9,6 +9,8 @@ const ASSET_LABEL: Record<AssetType, string> = {
   "linkedin-post": "LinkedIn post",
   "sales-one-pager": "sales one-pager",
   faq: "FAQ",
+  "sales-deck": "sales deck & demo script",
+  "campaign-plan": "campaign integration plan",
 };
 
 const STATUS: Record<AssetStatus, { label: string; tone: "good" | "warn" | "bad" | "info" }> = {
@@ -76,7 +78,7 @@ export function AssetsSection({ doc, editable = false }: { doc: LaunchDoc; edita
       {editable && <AssetActions missing={missing} />}
       {doc.assets.length === 0 ? (
         <EmptyState>
-          The kit (release notes, blog post, announcement email, LinkedIn post, sales one-pager, FAQ) is generated from the
+          The kit (release notes, blog post, announcement email, LinkedIn post, sales one-pager, FAQ, sales deck &amp; demo script, campaign integration plan) is generated from the
           brief in the asset phase. Every asset is then checked against the brief for drift.
         </EmptyState>
       ) : (

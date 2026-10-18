@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const STAGES: { name: string; detail: string; featured?: boolean }[] = [
   { name: "Analysis", detail: "Context, environment, competitors, economics, capacity, audience." },
   { name: "Alignment", detail: "One problem, success and failure metrics, signed off by six teams." },
-  { name: "Brief & assets", detail: "Six assets from one brief, checked for drift against it." },
+  { name: "Brief & assets", detail: "Eight assets from one brief — incl. sales deck and campaign plan — checked for drift." },
   { name: "Readiness", detail: "A gate with evidence, not a feeling." },
   { name: "Staged rollout", detail: "10% → 30% → 60% → 100%, each stage gated on agreed metrics.", featured: true },
   { name: "Metrics", detail: "The numbers everyone agreed on, per stage, against thresholds." },

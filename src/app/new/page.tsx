@@ -14,7 +14,7 @@ export default function NewLaunchPage() {
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Start your launch brief</h1>
           <p className="text-muted-foreground">
             Six answers are enough: LaunchOS suggests the tier, plans phases with ETAs and the staged rollout,
-            drafts the analysis and writes the six-asset kit. The launch is saved only in this browser.
+            drafts the analysis and writes the eight-asset kit. The launch is saved only in this browser.
           </p>
         </div>
         <BriefForm />
