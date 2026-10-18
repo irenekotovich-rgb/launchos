@@ -5,7 +5,7 @@
 
 import { createContext, useContext, useEffect, useId, useRef, useState } from "react";
 import { Check, Circle, Loader2, Pencil, Plus, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
-import { regenerateAsset, runConsistencyCheck } from "@/lib/ai-client";
+import { briefKey, regenerateAsset, runConsistencyCheck } from "@/lib/ai-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,7 +14,15 @@ import type { AnalysisKey, AssetType, LaunchBrief, LaunchDoc, Metric, PhaseKey, 
 import { cn } from "@/lib/utils";
 
 type Apply = (edit: (doc: LaunchDoc, now: Date) => LaunchDoc) => void;
-const Ctx = createContext<{ doc: LaunchDoc; apply: Apply; replace: (d: LaunchDoc) => void } | null>(null);
+type AiTask = () => ReturnType<typeof runConsistencyCheck>;
+interface EditorCtx {
+  doc: LaunchDoc;
+  apply: Apply;
+  /** Which AI task is running (one at a time per launch), and how to run one. */
+  aiBusy: string | null;
+  runAi: (key: string, task: AiTask, opts: { staleOnBriefChange: "discard" | "keep-stale" }) => Promise<string | null>;
+}
+const Ctx = createContext<EditorCtx | null>(null);
 
 export function LaunchEditor({ doc, onChange, children }: { doc: LaunchDoc; onChange: (d: LaunchDoc) => void; children: React.ReactNode }) {
   // Edits chain off the latest doc, so two edits in one tick (e.g. blur + click) don't drop one.
@@ -26,11 +34,33 @@ export function LaunchEditor({ doc, onChange, children }: { doc: LaunchDoc; onCh
     latest.current = next;
     onChange(next);
   };
-  const replace = (next: LaunchDoc) => {
-    latest.current = next;
-    onChange(next);
+  const [aiBusy, setAiBusy] = useState<string | null>(null);
+  const mounted = useRef(true);
+  useEffect(() => () => void (mounted.current = false), []);
+  /**
+   * Runs one AI task and applies its result to the *latest* doc. If the brief changed while the
+   * task ran, a check is discarded and a regenerated asset is kept but marked stale.
+   * Resolves to a user-facing message (or null on success).
+   */
+  const runAi: EditorCtx["runAi"] = async (key, task, { staleOnBriefChange }) => {
+    if (aiBusy) return "Another AI task is running — wait for it to finish.";
+    setAiBusy(key);
+    const res = await task();
+    if (!mounted.current) return null;
+    setAiBusy(null);
+    if (!res.ok) return res.message;
+    if (briefKey(latest.current) !== res.brief) {
+      if (staleOnBriefChange === "discard") return "The brief changed while checking — run the check again.";
+      apply((d, now) => {
+        const next = res.edit(d, now);
+        return { ...next, assets: next.assets.map((a) => (a.generatedAt === now.toISOString() ? { ...a, status: "stale" as const } : a)) };
+      });
+      return "Regenerated, but the brief changed meanwhile — it's marked stale.";
+    }
+    apply(res.edit);
+    return null;
   };
-  return <Ctx.Provider value={{ doc, apply, replace }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ doc, apply, aiBusy, runAi }}>{children}</Ctx.Provider>;
 }
 
 function useEditor() {
@@ -410,7 +440,8 @@ export function ClaimsEditor() {
       label="claims, one per line"
       maxLength={8 * 300}
       onSave={(t) => {
-        const claims = t.split("\n").map((c) => c.trim()).filter(Boolean).slice(0, 8);
+        // Same limits as the brief form/API: up to 8 claims, 300 characters each.
+        const claims = t.split("\n").map((c) => c.trim().slice(0, 300)).filter(Boolean).slice(0, 8);
         if (claims.length) apply((d, now) => E.editBrief(d, { claims }, now));
       }}
     />
@@ -419,64 +450,56 @@ export function ClaimsEditor() {
 
 /** Toolbar over the asset kit: run the rubric, generate what's missing. */
 export function AssetActions({ missing }: { missing: { type: AssetType; label: string }[] }) {
-  const { doc, replace } = useEditor();
-  const [busy, setBusy] = useState<string | null>(null);
+  const { doc, aiBusy, runAi } = useEditor();
   const [message, setMessage] = useState<string | null>(null);
-  const run = async (key: string, task: () => Promise<{ ok: true; doc: LaunchDoc } | { ok: false; message: string }>) => {
-    setBusy(key);
-    setMessage(null);
-    const res = await task();
-    setBusy(null);
-    if (res.ok) replace(res.doc);
-    else setMessage(res.message);
-  };
   const hasAssets = doc.assets.some((a) => a.content);
+  const go = async (key: string, task: AiTask, mode: "discard" | "keep-stale") => {
+    setMessage(null);
+    setMessage(await runAi(key, task, { staleOnBriefChange: mode }));
+  };
   return (
     <div className="mb-4 flex flex-col gap-2">
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" disabled={!hasAssets || busy !== null} onClick={() => run("check", () => runConsistencyCheck(doc))}>
-          {busy === "check" ? <Loader2 className="animate-spin" /> : <ShieldCheck />} Run consistency check
+        <Button size="sm" disabled={!hasAssets || aiBusy !== null} onClick={() => go("check", () => runConsistencyCheck(doc), "discard")}>
+          {aiBusy === "check" ? <Loader2 className="animate-spin" aria-hidden /> : <ShieldCheck aria-hidden />} Run consistency check
         </Button>
         {missing.map((m) => (
-          <Button key={m.type} size="sm" variant="outline" disabled={busy !== null} onClick={() => run(m.type, () => regenerateAsset(doc, m.type))}>
-            {busy === m.type ? <Loader2 className="animate-spin" /> : <Plus />} Generate {m.label}
+          <Button key={m.type} size="sm" variant="outline" disabled={aiBusy !== null} onClick={() => go(m.type, () => regenerateAsset(doc, m.type), "keep-stale")}>
+            {aiBusy === m.type ? <Loader2 className="animate-spin" aria-hidden /> : <Plus aria-hidden />} Generate {m.label}
           </Button>
         ))}
       </div>
       <p className="text-xs text-muted-foreground" aria-live="polite">
-        {busy === "check"
+        {aiBusy === "check"
           ? "Checking every asset against the brief on the fixed rubric…"
-          : busy
+          : aiBusy
             ? "Generating from the brief and messaging block…"
-            : message ?? "The check compares claims, numbers, feature names and tone with the brief. Same rubric every run."}
+            : message ?? "The check compares claims, numbers, feature names and tone with the brief. Same rubric every run; tone notes are advisory."}
       </p>
     </div>
   );
 }
 
 export function RegenerateAsset({ type, title }: { type: AssetType; title: string }) {
-  const { doc, replace } = useEditor();
-  const [busy, setBusy] = useState(false);
+  const { doc, aiBusy, runAi } = useEditor();
   const [message, setMessage] = useState<string | null>(null);
+  const busy = aiBusy === `regen-${type}`;
   return (
     <div className="flex flex-col gap-1">
       <button
         type="button"
-        disabled={busy}
+        disabled={aiBusy !== null}
         onClick={async () => {
-          setBusy(true);
           setMessage(null);
-          const res = await regenerateAsset(doc, type);
-          setBusy(false);
-          if (res.ok) replace(res.doc);
-          else setMessage(res.message);
+          setMessage(await runAi(`regen-${type}`, () => regenerateAsset(doc, type), { staleOnBriefChange: "keep-stale" }));
         }}
-        className="inline-flex items-center gap-1 self-start text-xs font-semibold text-primary hover:underline disabled:opacity-60"
+        className="inline-flex min-h-8 items-center gap-1 self-start text-xs font-semibold text-primary hover:underline disabled:opacity-60"
         aria-label={`Regenerate ${title}`}
       >
-        {busy ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />} {busy ? "Regenerating…" : "Regenerate from brief"}
+        {busy ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : <RefreshCw className="size-3.5" aria-hidden />} {busy ? "Regenerating…" : "Regenerate from brief"}
       </button>
-      {message && <p className="text-xs text-warning" role="status">{message}</p>}
+      <p className="text-xs text-warning empty:hidden" aria-live="polite">{message ?? ""}</p>
     </div>
   );
 }
+

@@ -20,11 +20,13 @@ const STATUS: Record<AssetStatus, { label: string; tone: "good" | "warn" | "bad"
 
 function AssetCard({ asset, findings, editable }: { asset: Asset; findings: ConsistencyFinding[]; editable: boolean }) {
   const s = STATUS[asset.status];
+  const notes = findings.filter((f) => f.severity === "low").length;
+  const label = asset.status === "ok" && notes ? `${s.label} · ${notes} note${notes === 1 ? "" : "s"}` : s.label;
   return (
     <article className="flex flex-col gap-3 rounded-xl border border-border bg-background/30 p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h3 className="min-w-0 break-words font-semibold">{asset.title}</h3>
-        <Pill tone={s.tone}>{s.label}</Pill>
+        <Pill tone={s.tone}>{label}</Pill>
       </div>
       <p className="whitespace-pre-line break-words text-sm text-muted-foreground line-clamp-6">{asset.content}</p>
       {asset.content.length > 280 && (

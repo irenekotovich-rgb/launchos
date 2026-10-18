@@ -154,3 +154,23 @@ describe("drift control", () => {
     expect(added.assets).toHaveLength(3);
   });
 });
+
+describe("review PR #9: messaging and replace-by-type", async () => {
+  const { messagingOrBrief } = await import("./ai-client");
+  it("a brief edit marks messaging stale and the brief then wins (avoid list kept)", () => {
+    const doc = fresh();
+    doc.messaging = { positioning: "p", pillars: ["x"], proofPoints: ["old claim"], avoid: ["SOC 2"] };
+    doc.assets = [{ id: "a-faq", type: "faq", title: "FAQ", content: "c", status: "ok", generatedAt: null, modelId: null }];
+    expect(messagingOrBrief(doc).proofPoints).toEqual(["old claim"]);
+    const edited = E.editBrief(doc, { claims: ["new claim"] }, LATER);
+    expect(edited.messaging?.stale).toBe(true);
+    expect(messagingOrBrief(edited)).toEqual({ positioning: "w", pillars: [], proofPoints: ["new claim"], avoid: ["SOC 2"] });
+  });
+  it("replaces an imported asset with a different id by type", () => {
+    const doc = fresh();
+    doc.assets = [{ id: "imported-7", type: "faq", title: "FAQ", content: "c", status: "stale", generatedAt: null, modelId: null }];
+    const next = E.replaceAsset(doc, { type: "faq", title: "FAQ", content: "new", modelId: "m" }, { step: "assets", modelId: "m", ranAt: LATER.toISOString() }, LATER);
+    expect(next.assets).toHaveLength(1);
+    expect(next.assets[0]).toMatchObject({ id: "imported-7", content: "new" });
+  });
+});

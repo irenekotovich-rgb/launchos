@@ -157,7 +157,9 @@ export function editBrief(doc: LaunchDoc, patch: Partial<LaunchBrief>, now: Date
   if (!changed.length) return doc;
   const assets = doc.assets.map((a) => (a.content ? { ...a, status: "stale" as const } : a));
   const flagged = assets.filter((a) => a.status === "stale").length;
-  const next = { ...doc, brief: { ...doc.brief, ...patch }, assets, findings: [] };
+  // The messaging block was derived from the old brief; mark it so checks and regeneration use the brief.
+  const messaging = doc.messaging ? { ...doc.messaging, stale: true } : undefined;
+  const next = { ...doc, brief: { ...doc.brief, ...patch }, assets, findings: [], messaging };
   return logDecision(
     next,
     `Brief edited (${changed.map((k) => BRIEF_LABEL[k]).join(", ")})${flagged ? `; ${flagged} asset${flagged === 1 ? "" : "s"} flagged stale` : ""}.`,
@@ -168,7 +170,9 @@ export function editBrief(doc: LaunchDoc, patch: Partial<LaunchBrief>, now: Date
 /** Findings replace the previous run; assets with high/medium findings drift, the rest are on brief. */
 export function applyConsistency(doc: LaunchDoc, findings: ConsistencyFinding[], model: ModelRun, now: Date): LaunchDoc {
   const serious = new Set(findings.filter((f) => f.severity !== "low").map((f) => f.assetId));
-  const assets = doc.assets.map((a) => ({ ...a, status: serious.has(a.id) ? ("stale" as const) : ("ok" as const) }));
+  const assets = doc.assets.map((a) =>
+    a.content && a.status !== "generating" ? { ...a, status: serious.has(a.id) ? ("stale" as const) : ("ok" as const) } : a,
+  );
   const next = { ...doc, findings, assets, meta: { ...doc.meta, models: [...doc.meta.models, model] } };
   return logDecision(
     next,
@@ -187,9 +191,11 @@ export function replaceAsset(
   model: ModelRun,
   now: Date,
 ): LaunchDoc {
-  const id = `a-${generated.type}`;
+  // Match by type, not id: imported docs may carry different ids.
+  const existing = doc.assets.find((a) => a.type === generated.type);
+  const id = existing?.id ?? `a-${generated.type}`;
   const asset: Asset = { id, type: generated.type, title: generated.title, content: generated.content, status: "draft", generatedAt: now.toISOString(), modelId: generated.modelId };
-  const exists = doc.assets.some((a) => a.id === id);
+  const exists = Boolean(existing);
   const assets = exists ? doc.assets.map((a) => (a.id === id ? asset : a)) : [...doc.assets, asset];
   const next = { ...doc, assets, findings: doc.findings.filter((f) => f.assetId !== id), meta: { ...doc.meta, models: [...doc.meta.models, model] } };
   return logDecision(next, `${generated.title} ${exists ? "regenerated" : "generated"} from the current brief.`, now, "LaunchOS");
