@@ -114,7 +114,7 @@ export function mergeGenerated(doc: LaunchDoc, content: GeneratedContent, now: D
     assets,
     decisions: [
       ...doc.decisions,
-      { id: `d${doc.decisions.length + 1}`, date: stamp, text: `AI suggested tier ${tier}; plan re-derived from it.`, author: "LaunchOS" },
+      { id: `d-${newId().slice(0, 12)}`, date: stamp, text: `AI suggested tier ${tier}; plan re-derived from it.`, author: "LaunchOS" },
     ],
   };
 }

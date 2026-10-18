@@ -26,8 +26,10 @@ export interface GeneratedContent {
   failedAssets: AssetType[];
 }
 
+/** The brief is user input: fenced so prompts can tell the model to treat it as data only. */
 export function briefAsText(b: LaunchBrief): string {
   return [
+    "<brief>",
     `Product / feature: ${b.productName}`,
     `What ships: ${b.what}`,
     `Who it's for: ${b.who}`,
@@ -35,6 +37,7 @@ export function briefAsText(b: LaunchBrief): string {
     `Launch day (100% rollout): ${b.targetDate.slice(0, 10)}`,
     `Key claims:`,
     ...b.claims.map((c) => `- ${c}`),
+    "</brief>",
   ].join("\n");
 }
 
@@ -88,17 +91,19 @@ export async function generateLaunchContent(brief: z.infer<typeof briefSchema>, 
   const chain = modelChain();
   if (!chain.length) throw new GenerationUnavailable([]);
   const ranAt = now.toISOString();
+  // Whole request must finish under the route's maxDuration (120s) with room to respond.
+  const deadline = Date.now() + 105_000;
   const briefText = briefAsText(brief);
   const models: ModelRun[] = [];
 
   const tierPrompt = await loadPrompt("brief-to-tier");
-  const tier = await generateStructured(tierOutput, render(tierPrompt.body, { brief: briefText }), chain);
+  const tier = await generateStructured(tierOutput, render(tierPrompt.body, { brief: briefText }), chain, deadline);
   models.push({ step: "tier", modelId: tier.modelId, ranAt, prompt: tierPrompt.name, promptVersion: tierPrompt.version });
   const messaging = tier.object.messaging;
   const messagingText = messagingAsText(messaging);
 
   const analysisPrompt = await loadPrompt("analysis-draft");
-  const analysisTask = generateStructured(analysisOutput, render(analysisPrompt.body, { brief: briefText }), chain)
+  const analysisTask = generateStructured(analysisOutput, render(analysisPrompt.body, { brief: briefText }), chain, deadline)
     .then((r) => {
       models.push({ step: "analysis", modelId: r.modelId, ranAt, prompt: analysisPrompt.name, promptVersion: analysisPrompt.version });
       return Object.fromEntries(Object.entries(r.object).map(([k, v]) => [k, normalizeText(v)])) as typeof r.object;
@@ -109,7 +114,7 @@ export async function generateLaunchContent(brief: z.infer<typeof briefSchema>, 
   const assetsTask = mapLimit(ASSET_TYPES, 2, async (type) => {
     const prompt = await loadPrompt(`asset-${type}`);
     try {
-      const r = await generateStructured(assetOutput, render(prompt.body, { brief: briefText, messaging: messagingText }), chain);
+      const r = await generateStructured(assetOutput, render(prompt.body, { brief: briefText, messaging: messagingText }), chain, deadline);
       models.push({ step: "assets", modelId: r.modelId, ranAt, prompt: prompt.name, promptVersion: prompt.version });
       return { type, title: normalizeText(r.object.title), content: normalizeText(r.object.content), modelId: r.modelId };
     } catch (err) {
@@ -120,6 +125,8 @@ export async function generateLaunchContent(brief: z.infer<typeof briefSchema>, 
   });
 
   const [analysis, assets] = await Promise.all([analysisTask, assetsTask]);
+  const STEP_ORDER = ["tier", "analysis", "assets", "consistency"];
+  models.sort((a, b) => STEP_ORDER.indexOf(a.step) - STEP_ORDER.indexOf(b.step));
   return {
     tier: { tier: tier.object.tier, rationale: normalizeText(tier.object.rationale) },
     messaging,

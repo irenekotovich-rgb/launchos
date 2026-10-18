@@ -7,7 +7,7 @@ export const briefSchema = z.object({
   what: z.string().trim().min(1).max(LIMITS.what),
   who: z.string().trim().min(1).max(LIMITS.who),
   whyNow: z.string().trim().min(1).max(LIMITS.whyNow),
-  targetDate: z.iso.datetime(),
+  targetDate: z.iso.datetime().refine((d) => Date.parse(d) > Date.now(), "Launch day must be in the future."),
   claims: z.array(z.string().trim().min(1).max(LIMITS.claim)).min(1).max(LIMITS.claims),
 });
 

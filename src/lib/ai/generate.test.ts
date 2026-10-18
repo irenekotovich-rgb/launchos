@@ -15,3 +15,16 @@ describe("generation helpers", () => {
     expect(text).toContain("- a\n- b");
   });
 });
+
+describe("brief schema accepts what the form produces", async () => {
+  const { briefSchema } = await import("./schemas");
+  const { launchMoment } = await import("../brief");
+  it("form brief (09:00 local → ISO with Z) passes; past dates and bare dates fail", () => {
+    const future = new Date(Date.now() + 30 * 86_400_000);
+    const date = `${future.getFullYear()}-${String(future.getMonth() + 1).padStart(2, "0")}-${String(future.getDate()).padStart(2, "0")}`;
+    const brief = { productName: "X", what: "w", who: "u", whyNow: "n", targetDate: launchMoment(date)!.toISOString(), claims: ["c"] };
+    expect(briefSchema.safeParse(brief).success).toBe(true);
+    expect(briefSchema.safeParse({ ...brief, targetDate: "2020-01-01T09:00:00.000Z" }).success).toBe(false);
+    expect(briefSchema.safeParse({ ...brief, targetDate: date }).success).toBe(false);
+  });
+});
