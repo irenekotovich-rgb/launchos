@@ -65,7 +65,7 @@ function GenerationNote({ doc }: { doc: LaunchDoc }) {
 }
 
 /** The launch room: renders a LaunchDoc as of `now`. Pure render; interactivity lives in child client components. */
-export function LaunchRoom({ doc, now, liveClock = true }: { doc: LaunchDoc; now: Date; liveClock?: boolean }) {
+export function LaunchRoom({ doc, now, liveClock = true, editable = false }: { doc: LaunchDoc; now: Date; liveClock?: boolean; editable?: boolean }) {
   return (
     <div className="flex flex-col gap-6">
       {doc.meta.mode === "demo" && <DemoBanner />}
@@ -82,13 +82,13 @@ export function LaunchRoom({ doc, now, liveClock = true }: { doc: LaunchDoc; now
         </ul>
       </nav>
       <Overview doc={doc} now={now} liveClock={liveClock} />
-      <AnalysisSection doc={doc} />
-      <AlignmentSection doc={doc} />
-      <PlanSection doc={doc} />
-      <RolloutSection doc={doc} now={now} />
+      <AnalysisSection doc={doc} editable={editable} />
+      <AlignmentSection doc={doc} editable={editable} />
+      <PlanSection doc={doc} editable={editable} />
+      <RolloutSection doc={doc} now={now} editable={editable} />
       <MetricsSection doc={doc} />
       <AssetsSection doc={doc} />
-      <DecisionsSection doc={doc} />
+      <DecisionsSection doc={doc} editable={editable} />
       <Suggestions items={bottlenecks(doc, now)} storageKey={`launchos:dismissed:${doc.meta.id}`} />
     </div>
   );

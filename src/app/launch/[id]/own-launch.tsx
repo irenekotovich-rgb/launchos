@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { runwayWarning } from "@/lib/plan";
-import { loadLaunch } from "@/lib/storage";
+import { loadLaunch, saveLaunch } from "@/lib/storage";
+import { LaunchEditor } from "@/components/room/editors";
 import { LaunchRoom } from "@/components/room/launch-room";
 import type { LaunchDoc } from "@/lib/types";
 
@@ -12,6 +13,7 @@ export function OwnLaunch({ id }: { id: string }) {
   const [state, setState] = useState<
     { status: "loading" } | { status: "missing" } | { status: "corrupt" } | { status: "ready"; doc: LaunchDoc }
   >({ status: "loading" });
+  const [saveError, setSaveError] = useState(false);
 
   useEffect(() => {
     setState({ status: "loading" });
@@ -58,7 +60,20 @@ export function OwnLaunch({ id }: { id: string }) {
       {warning && (
         <p role="note" className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning">{warning}</p>
       )}
-      <LaunchRoom doc={doc} now={new Date()} />
+      <LaunchEditor
+        doc={doc}
+        onChange={(next) => {
+          setState({ status: "ready", doc: next });
+          if (!saveLaunch(next)) setSaveError(true);
+        }}
+      >
+        <LaunchRoom doc={doc} now={new Date()} editable />
+      </LaunchEditor>
+      {saveError && (
+        <p role="alert" className="fixed inset-x-3 top-3 z-50 rounded-lg border border-destructive/40 bg-card p-3 text-sm text-destructive sm:inset-x-auto sm:right-4 sm:w-96">
+          Couldn&apos;t save the last change in this browser (storage full or blocked). Export the launch to keep it.
+        </p>
+      )}
     </div>
   );
 }
