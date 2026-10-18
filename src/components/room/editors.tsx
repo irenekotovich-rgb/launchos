@@ -10,12 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import * as E from "@/lib/edit";
+import { METRIC_LIMITS } from "@/lib/types";
 import { stageGate } from "@/lib/launch-status";
 import * as R from "@/lib/rollout-edit";
 import { emailsInSnapshot, exportFileName, SHARE_TTL_DAYS, toExportFile } from "@/lib/share";
 import { setShareInfo } from "@/lib/edit";
 import { fmtDayYear } from "@/lib/format";
-import type { AnalysisKey, AssetType, Highlight, LaunchBrief, LaunchDoc, Metric, PhaseKey, Recipient, RolloutPercent, TeamKey, TeamSignoff } from "@/lib/types";
+import type { AnalysisKey, AssetType, Highlight, Impact, LaunchBrief, LaunchDoc, Metric, PhaseKey, Recipient, RolloutPercent, TeamKey, TeamSignoff } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Apply = (edit: (doc: LaunchDoc, now: Date) => LaunchDoc) => void;
@@ -208,6 +209,7 @@ export function MetricForm({ kind }: { kind: Metric["kind"] }) {
   const trigger = useReturnFocus(open);
   const id = useId();
   if (doc.alignment.lockedAt) return null;
+  if (doc.alignment.metrics.filter((m) => m.kind === kind).length >= METRIC_LIMITS[kind]) return null;
   if (!open) {
     return (
       <button ref={trigger} type="button" onClick={() => setOpen(true)} className="mt-2 inline-flex min-h-8 items-center gap-1 text-xs font-semibold text-primary hover:underline">
@@ -881,5 +883,54 @@ export function AnalysisDetailEditors({ field }: { field: AnalysisKey }) {
         />
       </div>
     </section>
+  );
+}
+
+// ---------------------------------------------------------------- expected results
+
+function ImpactFields({ legend, value, onSave }: { legend: string; value: Impact | null; onSave: (i: Impact | null) => void }) {
+  const id = useId();
+  const [f, setF] = useState({ amount: value ? String(value.amount) : "", currency: value?.currency ?? "USD", period: value?.period ?? "first 12 months", note: value?.note ?? "" });
+  const valid = /^\d+(\.\d+)?$/.test(f.amount.trim());
+  return (
+    <form
+      className="flex flex-col gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSave(f.amount.trim() === "" ? null : valid ? { amount: Number(f.amount), currency: f.currency, period: f.period, note: f.note } : value);
+      }}
+    >
+      <fieldset className="grid gap-2 sm:grid-cols-[8rem_5rem_1fr]">
+        <legend className="mb-1 text-xs font-semibold">{legend}</legend>
+        <label className="sr-only" htmlFor={`${id}-a`}>{legend} amount</label>
+        <Input id={`${id}-a`} inputMode="decimal" placeholder="Amount" value={f.amount} aria-invalid={f.amount !== "" && !valid} onChange={(e) => setF({ ...f, amount: e.target.value })} />
+        <label className="sr-only" htmlFor={`${id}-c`}>{legend} currency</label>
+        <Input id={`${id}-c`} maxLength={3} value={f.currency} onChange={(e) => setF({ ...f, currency: e.target.value })} />
+        <label className="sr-only" htmlFor={`${id}-p`}>{legend} period</label>
+        <Input id={`${id}-p`} maxLength={40} value={f.period} onChange={(e) => setF({ ...f, period: e.target.value })} />
+        <label className="sr-only" htmlFor={`${id}-n`}>{legend} basis</label>
+        <Input id={`${id}-n`} className="sm:col-span-3" maxLength={140} placeholder="Basis of the estimate" value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} />
+      </fieldset>
+      <Button type="submit" size="sm" variant="outline" className="self-start">Save {legend.toLowerCase()}</Button>
+    </form>
+  );
+}
+
+export function ExpectedEditors() {
+  const { doc, apply } = useEditor();
+  const e = doc.alignment.expected;
+  return (
+    <div className="surface flex flex-col gap-4 rounded-2xl p-5 lg:col-span-2">
+      <div className="flex flex-col gap-2">
+        <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">How it should look for the user (one per line)</h3>
+        <InlineText
+          value={(e?.userExperience ?? []).join("\n")}
+          label="expected user experience, one per line"
+          onSave={(t) => apply((d, now) => E.setExpected(d, { userExperience: t.split("\n") }, now))}
+        />
+      </div>
+      <ImpactFields legend="Revenue increase" value={e?.revenue ?? null} onSave={(i) => apply((d, now) => E.setExpected(d, { revenue: i }, now))} />
+      <ImpactFields legend="Expenses increase" value={e?.expenses ?? null} onSave={(i) => apply((d, now) => E.setExpected(d, { expenses: i }, now))} />
+    </div>
   );
 }
