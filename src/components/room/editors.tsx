@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import * as E from "@/lib/edit";
 import { stageGate } from "@/lib/launch-status";
 import * as R from "@/lib/rollout-edit";
-import { exportFileName, toExportFile } from "@/lib/share";
+import { emailsInSnapshot, exportFileName, SHARE_TTL_DAYS, toExportFile } from "@/lib/share";
 import { setShareInfo } from "@/lib/edit";
 import { fmtDayYear } from "@/lib/format";
 import type { AnalysisKey, AssetType, LaunchBrief, LaunchDoc, Metric, PhaseKey, Recipient, RolloutPercent, TeamKey, TeamSignoff } from "@/lib/types";
@@ -683,11 +683,23 @@ export function ReadingsForm() {
 
 export function SharePanel() {
   const { doc, apply } = useEditor();
-  const [step, setStep] = useState<"idle" | "confirm" | "busy">("idle");
+  const [step, setStep] = useState<"idle" | "confirm" | "confirm-delete" | "busy">("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const confirmRef = useRef<HTMLButtonElement>(null);
+  const openRef = useRef<HTMLButtonElement>(null);
   const share = doc.meta.share;
   const url = share && typeof window !== "undefined" ? `${window.location.origin}/share/${share.id}` : null;
+  const emails = step === "confirm" ? emailsInSnapshot(doc) : [];
+
+  useEffect(() => {
+    if (step === "confirm" || step === "confirm-delete") confirmRef.current?.focus();
+  }, [step]);
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(t);
+  }, [copied]);
 
   const exportJson = () => {
     const blob = new Blob([JSON.stringify(toExportFile(doc, new Date()), null, 2)], { type: "application/json" });
@@ -719,16 +731,17 @@ export function SharePanel() {
     setStep("busy");
     try {
       const r = await fetch(`/api/share?id=${encodeURIComponent(share.id)}`, { method: "DELETE", headers: { "x-delete-token": share.deleteToken } });
-      const json = (await r.json()) as { status: string; message?: string };
-      // A link that's already gone counts as deleted.
+      const json = (await r.json().catch(() => ({ status: "error" }))) as { status: string; message?: string };
       if (json.status === "ok" || r.status === 404) {
+        // Deleted now, or already gone (expired or removed elsewhere).
         apply((d, now) => setShareInfo(d, null, now));
-        setMessage("Share link deleted. Anyone who opens it now sees “not found”.");
+        setMessage(r.status === 404 ? "That link had already expired or been deleted." : "Share link deleted. Anyone who opens it now sees “not found”.");
       } else setMessage(json.message ?? "Couldn't delete the link — try again.");
     } catch {
       setMessage("Couldn't reach the server — try again.");
     }
     setStep("idle");
+    openRef.current?.focus();
   };
 
   return (
@@ -736,18 +749,30 @@ export function SharePanel() {
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" variant="outline" onClick={exportJson}>Export JSON</Button>
         {!share && step !== "confirm" && (
-          <Button size="sm" disabled={step === "busy"} onClick={() => setStep("confirm")}>Create read-only share link</Button>
+          <Button ref={openRef} size="sm" disabled={step === "busy"} onClick={() => setStep("confirm")}>Create read-only share link</Button>
         )}
         <span className="text-xs text-muted-foreground">This launch lives only in this browser — export it to keep a copy.</span>
       </div>
       {step === "confirm" && (
-        <div role="alertdialog" aria-labelledby="share-warning" className="flex flex-col gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
+        <div
+          role="alertdialog"
+          aria-labelledby="share-warning"
+          className="flex flex-col gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm"
+          onKeyDown={(e) => e.key === "Escape" && setStep("idle")}
+        >
           <p id="share-warning">
             <span className="font-semibold text-warning">Anyone with the link can view this launch.</span> The snapshot is
-            uploaded to this deployment&apos;s storage; recipient emails and sign-off names are removed. You can delete it any time.
+            uploaded to this deployment&apos;s storage. Recipient emails, sign-off names, owners and notes are removed; the brief,
+            analysis, assets and decisions are published as written. Links expire after {SHARE_TTL_DAYS} days.
           </p>
+          {emails.length > 0 && (
+            <p className="font-medium text-warning">
+              Your free text still contains {emails.length} email address{emails.length === 1 ? "" : "es"} ({emails.slice(0, 3).join(", ")}
+              {emails.length > 3 ? "…" : ""}). Edit them out first if they shouldn&apos;t be public.
+            </p>
+          )}
           <div className="flex gap-2">
-            <Button size="sm" onClick={create}>Create link</Button>
+            <Button ref={confirmRef} size="sm" onClick={create}>Create link</Button>
             <Button size="sm" variant="ghost" onClick={() => setStep("idle")}>Cancel</Button>
           </div>
         </div>
@@ -756,6 +781,7 @@ export function SharePanel() {
         <div className="flex flex-col gap-2 text-sm">
           <p className="text-muted-foreground">
             Read-only snapshot from {fmtDayYear(share.createdAt)}. Later edits aren&apos;t included — delete and re-create to update it.
+            Only this browser can delete it: clearing site data loses that ability (the link still expires after {SHARE_TTL_DAYS} days).
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <code className="max-w-full break-all rounded bg-background/60 px-2 py-1 text-xs">{url}</code>
@@ -773,7 +799,15 @@ export function SharePanel() {
             >
               {copied ? "Copied" : "Copy link"}
             </Button>
-            <Button size="sm" variant="destructive" disabled={step === "busy"} onClick={remove}>Delete link</Button>
+            {step === "confirm-delete" ? (
+              <span role="alertdialog" aria-label="Confirm delete" className="flex flex-wrap items-center gap-2">
+                <span className="text-xs">Delete link? Anyone using it will see “not found”.</span>
+                <Button ref={confirmRef} size="sm" variant="destructive" onClick={remove}>Delete</Button>
+                <Button size="sm" variant="ghost" onClick={() => setStep("idle")}>Keep</Button>
+              </span>
+            ) : (
+              <Button ref={openRef} size="sm" variant="destructive" disabled={step === "busy"} onClick={() => setStep("confirm-delete")}>Delete link</Button>
+            )}
           </div>
         </div>
       )}

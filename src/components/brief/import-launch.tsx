@@ -13,7 +13,7 @@ export function ImportLaunch() {
   return (
     <div className="flex flex-col gap-1 text-sm">
       <label htmlFor={id} className="font-semibold">
-        Or import a launch file <span className="font-normal text-muted-foreground">(.json exported from LaunchOS)</span>
+        Or import a launch file <span className="font-normal text-muted-foreground">(.json exported from LaunchOS; files over 400 KB can be used but not shared)</span>
       </label>
       <input
         id={id}
@@ -22,19 +22,25 @@ export function ImportLaunch() {
         className="text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-border file:bg-secondary file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-foreground"
         onChange={async (e) => {
           setError(null);
-          const file = e.target.files?.[0];
+          const input = e.target;
+          const file = input.files?.[0];
+          // Reset so re-selecting the same (fixed) file fires onChange again.
+          const fail = (m: string) => {
+            input.value = "";
+            setError(m);
+          };
           if (!file) return;
-          if (file.size > 2_000_000) return setError("That file is too large to be a launch.");
+          if (file.size > 2_000_000) return fail("That file is too large to be a launch.");
           let raw: unknown;
           try {
             raw = JSON.parse(await file.text());
           } catch {
-            return setError("That file isn't valid JSON.");
+            return fail("That file isn't valid JSON.");
           }
           const newId = typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${Date.now()}`;
           const doc = prepareImport(raw, newId, new Date());
-          if (!doc) return setError("That file isn't a LaunchOS launch (or it's from an incompatible version).");
-          if (!saveLaunch(doc)) return setError("Couldn't save in this browser — storage may be blocked.");
+          if (!doc) return fail("That file isn't a LaunchOS launch (or it's from an incompatible version).");
+          if (!saveLaunch(doc)) return fail("Couldn't save in this browser — storage may be blocked.");
           router.push(`/launch/${doc.meta.id}`);
         }}
       />

@@ -10,7 +10,12 @@ import { getShare } from "@/lib/share-store";
 export const dynamic = "force-dynamic";
 
 // Share links are private-by-obscurity: never index them.
-export const metadata: Metadata = { title: "Shared launch room — LaunchOS", robots: { index: false, follow: false } };
+// The id is the credential: never index, never leak it via Referer to links inside the room.
+export const metadata: Metadata = {
+  title: "Shared launch room — LaunchOS",
+  robots: { index: false, follow: false },
+  referrer: "no-referrer",
+};
 
 export default async function SharedLaunch({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -25,7 +30,7 @@ export default async function SharedLaunch({ params }: { params: Promise<{ id: s
         <div role="note" className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm">
           <p>
             <span className="font-semibold text-primary">Read-only snapshot</span>
-            {doc.meta.sharedAt && <> shared {fmtDayYear(doc.meta.sharedAt)}</>}. Recipient emails and sign-off names are removed.
+            {doc.meta.sharedAt && <> shared {fmtDayYear(doc.meta.sharedAt)}</>}. Recipient emails, sign-off names, owners and notes are removed.
           </p>
           <Link href="/new" className="font-semibold underline underline-offset-4">Run your own launch</Link>
         </div>
