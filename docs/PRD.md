@@ -81,7 +81,7 @@ multi-user accounts & permissions; multi-launch portfolio views.
 | Language | **English only.** No localization, no market/language variants in the product, prompts or demo. Not on the roadmap. |
 | Rollout | Fixed 10/20/30/40 increments (cumulative 10/30/60/100%). A stage can't open until the previous stage's gate passes or is overridden with a logged decision. |
 | Notifications | Recipients = stakeholder group + team leads, stored in the LaunchDoc. v1 generates the message and opens it via `mailto:` with copy fallback — no email service. Addresses live only in the LaunchDoc on the owner's device; read-only share links strip recipients and sign-off names before upload. |
-| Visual direction | Grey metallic surfaces with a gradient into lilac; accents lilac and orange. Final references collected from the owner once the product works end-to-end. |
+| Visual direction | Owner's reference (2026-10-18): Apple-style bento on a near-black stage — chrome-silver metal lettering and rings, burgundy-metal tiles, a glow that warms into burgundy; wine-rose primary, orange only for attention. Minimal text, maximum visual facts. Single long page. |
 | Honesty | Demo content labeled on every screen; generated assets marked "draft — review before publishing"; model ids + date recorded in the doc. |
 
 ## 6. Risks
