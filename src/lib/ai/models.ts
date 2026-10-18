@@ -3,11 +3,15 @@
 import "server-only";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { generateText, Output, type LanguageModel } from "ai";
+import { generateText, NoObjectGeneratedError, Output, type LanguageModel } from "ai";
 import type { z } from "zod";
 
 export const DEFAULT_PRIMARY = "gemini-3.5-flash";
-export const DEFAULT_FALLBACKS = ["nvidia/nemotron-3-super-120b-a12b:free", "google/gemma-4-31b-it:free"];
+export const DEFAULT_FALLBACKS = [
+  "poolside/laguna-s-2.1:free", // fastest structured output in a 2026-10-18 benchmark (~2.5s)
+  "nvidia/nemotron-3-super-120b-a12b:free",
+  "google/gemma-4-31b-it:free",
+];
 
 interface Candidate {
   id: string;
@@ -27,6 +31,24 @@ export function modelChain(env: NodeJS.ProcessEnv = process.env): Candidate[] {
     for (const id of ids.filter(Boolean)) chain.push({ id: `openrouter/${id}`, model: openrouter(id) });
   }
   return chain;
+}
+
+/**
+ * Free models often ignore structured-output mode and answer with prose + JSON or fenced JSON.
+ * Pull the outermost JSON object out of the raw text and validate it with the same schema.
+ */
+export function recoverJson<T>(text: string | undefined, schema: z.ZodType<T>): T | null {
+  if (!text) return null;
+  const unfenced = text.replace(/```(?:json)?/gi, "");
+  const start = unfenced.indexOf("{");
+  const end = unfenced.lastIndexOf("}");
+  if (start < 0 || end <= start) return null;
+  try {
+    const parsed = schema.safeParse(JSON.parse(unfenced.slice(start, end + 1)));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
 }
 
 export class GenerationUnavailable extends Error {
@@ -62,11 +84,16 @@ export async function generateStructured<T>(
         model: c.model,
         prompt,
         output: Output.object({ schema }),
-        maxRetries: remaining > 2 * PER_CALL_TIMEOUT_MS ? 1 : 0,
+        // No SDK retries: the chain is the retry, and retrying a quota error only burns the deadline.
+        maxRetries: 0,
         abortSignal: AbortSignal.timeout(Math.min(PER_CALL_TIMEOUT_MS, remaining - 2_000)),
       });
       return { object: result.output as T, modelId: c.id };
     } catch (err) {
+      if (NoObjectGeneratedError.isInstance(err)) {
+        const recovered = recoverJson(err.text, schema);
+        if (recovered) return { object: recovered, modelId: c.id };
+      }
       // Log the class per attempt so a bad key or a schema mismatch is visible, not just exhaustion.
       // Messages are truncated provider errors; they never include our request headers or keys.
       const kind = err instanceof Error ? err.name : typeof err;
