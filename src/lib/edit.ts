@@ -7,6 +7,7 @@ import type {
   AssetType,
   ConsistencyFinding,
   Decision,
+  ExpectedResults,
   Highlight,
   LaunchBrief,
   ModelRun,
@@ -17,6 +18,8 @@ import type {
   TeamKey,
   TeamSignoff,
 } from "./types";
+import { METRIC_LIMITS } from "./types";
+import { cleanExpected } from "./money";
 import { isLaunchDoc, sanitizeLaunchDoc } from "./validate";
 
 const randomId = (prefix: string) =>
@@ -65,6 +68,9 @@ export function upsertMetric(doc: LaunchDoc, metric: Omit<Metric, "id"> & { id?:
   if (frozen(doc)) return doc;
   const id = metric.id ?? randomId(metric.kind === "success" ? "s" : "f");
   const exists = doc.alignment.metrics.some((m) => m.id === id);
+  // The framework is fixed: at most three success and two failure metrics — also when an edit changes a metric's kind.
+  const sameKindOthers = doc.alignment.metrics.filter((m) => m.kind === metric.kind && m.id !== id).length;
+  if (sameKindOthers >= METRIC_LIMITS[metric.kind]) return doc;
   const next: Metric = { ...metric, id };
   const metrics = exists ? doc.alignment.metrics.map((m) => (m.id === id ? next : m)) : [...doc.alignment.metrics, next];
   return touch({ ...doc, alignment: { ...doc.alignment, metrics } }, now);
@@ -89,8 +95,10 @@ export function lockBlockers(doc: LaunchDoc): string[] {
   const a = doc.alignment;
   const out: string[] = [];
   if (!a.problem.trim()) out.push("Write the problem statement.");
-  if (!a.metrics.some((m) => m.kind === "success")) out.push("Agree at least one success metric.");
-  if (!a.metrics.some((m) => m.kind === "failure")) out.push("Agree at least one failure metric — rollout gates need it.");
+  const success = a.metrics.filter((m) => m.kind === "success").length;
+  const failure = a.metrics.filter((m) => m.kind === "failure").length;
+  if (success !== METRIC_LIMITS.success) out.push(`Agree ${METRIC_LIMITS.success} success metrics (now ${success}).`);
+  if (failure !== METRIC_LIMITS.failure) out.push(`Agree ${METRIC_LIMITS.failure} failure metrics — rollout gates need them (now ${failure}).`);
   const unsigned = Object.values(a.signoffs).filter((s) => s.status !== "signed").length;
   if (unsigned) out.push(`${unsigned} team${unsigned === 1 ? " hasn't" : "s haven't"} signed off (pending or objected).`);
   return out;
@@ -244,4 +252,13 @@ export function setAnalysisDetail(
   };
   if (JSON.stringify(next.highlights) === JSON.stringify(prev.highlights) && JSON.stringify(next.points) === JSON.stringify(prev.points)) return doc;
   return touch({ ...doc, analysis: { ...doc.analysis, fields: { ...doc.analysis.fields, [key]: next } } }, now);
+}
+
+/** Expected results (user experience + company impact) are part of alignment, so they freeze with it. */
+export function setExpected(doc: LaunchDoc, patch: Partial<ExpectedResults>, now: Date): LaunchDoc {
+  if (frozen(doc)) return doc;
+  const prev: ExpectedResults = doc.alignment.expected ?? { userExperience: [], revenue: null, expenses: null };
+  const next = cleanExpected({ ...prev, ...patch })!;
+  if (JSON.stringify(next) === JSON.stringify(prev)) return doc;
+  return touch({ ...doc, alignment: { ...doc.alignment, expected: next } }, now);
 }

@@ -10,12 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import * as E from "@/lib/edit";
+import { METRIC_LIMITS } from "@/lib/types";
+import { normalizeCurrency, parseAmount } from "@/lib/money";
 import { stageGate } from "@/lib/launch-status";
 import * as R from "@/lib/rollout-edit";
 import { emailsInSnapshot, exportFileName, SHARE_TTL_DAYS, toExportFile } from "@/lib/share";
 import { setShareInfo } from "@/lib/edit";
 import { fmtDayYear } from "@/lib/format";
-import type { AnalysisKey, AssetType, Highlight, LaunchBrief, LaunchDoc, Metric, PhaseKey, Recipient, RolloutPercent, TeamKey, TeamSignoff } from "@/lib/types";
+import type { AnalysisKey, AssetType, Highlight, Impact, LaunchBrief, LaunchDoc, Metric, PhaseKey, Recipient, RolloutPercent, TeamKey, TeamSignoff } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Apply = (edit: (doc: LaunchDoc, now: Date) => LaunchDoc) => void;
@@ -208,6 +210,7 @@ export function MetricForm({ kind }: { kind: Metric["kind"] }) {
   const trigger = useReturnFocus(open);
   const id = useId();
   if (doc.alignment.lockedAt) return null;
+  if (doc.alignment.metrics.filter((m) => m.kind === kind).length >= METRIC_LIMITS[kind]) return null;
   if (!open) {
     return (
       <button ref={trigger} type="button" onClick={() => setOpen(true)} className="mt-2 inline-flex min-h-8 items-center gap-1 text-xs font-semibold text-primary hover:underline">
@@ -881,5 +884,79 @@ export function AnalysisDetailEditors({ field }: { field: AnalysisKey }) {
         />
       </div>
     </section>
+  );
+}
+
+// ---------------------------------------------------------------- expected results
+
+function ImpactFields({ legend, value, onSave }: { legend: string; value: Impact | null; onSave: (i: Impact | null) => void }) {
+  const id = useId();
+  const [f, setF] = useState({ amount: value ? String(value.amount) : "", currency: value?.currency ?? "USD", period: value?.period ?? "first 12 months", note: value?.note ?? "" });
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <form
+      className="flex flex-col gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (f.amount.trim() === "") {
+          setError(null);
+          return onSave(null);
+        }
+        const amount = parseAmount(f.amount);
+        if (amount === null) return setError("Use digits only, e.g. 250000 or 250,000.");
+        if (normalizeCurrency(f.currency, "") === "") return setError("Currency must be a 3-letter code, e.g. USD or EUR.");
+        setError(null);
+        onSave({ amount, currency: f.currency, period: f.period, note: f.note });
+      }}
+    >
+      <p className="text-xs font-semibold">{legend}</p>
+      <div className="grid gap-2 sm:grid-cols-[9rem_5rem_1fr]">
+        {([
+          ["a", "Amount", f.amount, (v: string) => setF({ ...f, amount: v }), 16, "250,000"],
+          ["c", "Currency", f.currency, (v: string) => setF({ ...f, currency: v }), 3, "USD"],
+          ["p", "Period", f.period, (v: string) => setF({ ...f, period: v }), 40, "first 12 months"],
+        ] as const).map(([k, label, val, set, max, ph]) => (
+          <div key={k} className="flex flex-col gap-1">
+            <label className="text-[11px] text-muted-foreground" htmlFor={`${id}-${k}`}>{label}</label>
+            <Input
+              id={`${id}-${k}`}
+              aria-label={`${legend} ${label.toLowerCase()}`}
+              aria-describedby={`${id}-err`}
+              aria-invalid={k === "a" && error !== null}
+              inputMode={k === "a" ? "decimal" : undefined}
+              maxLength={max}
+              placeholder={ph}
+              value={val}
+              onChange={(e) => set(e.target.value)}
+            />
+          </div>
+        ))}
+        <div className="flex flex-col gap-1 sm:col-span-3">
+          <label className="text-[11px] text-muted-foreground" htmlFor={`${id}-n`}>Basis of the estimate</label>
+          <Input id={`${id}-n`} aria-label={`${legend} basis`} maxLength={140} value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} />
+        </div>
+      </div>
+      <p id={`${id}-err`} aria-live="polite" className="text-xs text-destructive empty:hidden">{error ?? ""}</p>
+      <Button type="submit" size="sm" variant="outline" className="self-start">Save {legend.toLowerCase()}</Button>
+    </form>
+  );
+}
+
+export function ExpectedEditors() {
+  const { doc, apply } = useEditor();
+  const e = doc.alignment.expected;
+  return (
+    <div className="surface flex flex-col gap-4 rounded-2xl p-5 lg:col-span-2">
+      <div className="flex flex-col gap-2">
+        <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">How it should look for the user (one per line)</h3>
+        <InlineText
+          value={(e?.userExperience ?? []).join("\n")}
+          label="expected user experience, one per line"
+          onSave={(t) => apply((d, now) => E.setExpected(d, { userExperience: t.split("\n") }, now))}
+        />
+      </div>
+      <ImpactFields legend="Revenue increase" value={e?.revenue ?? null} onSave={(i) => apply((d, now) => E.setExpected(d, { revenue: i }, now))} />
+      <ImpactFields legend="Expenses increase" value={e?.expenses ?? null} onSave={(i) => apply((d, now) => E.setExpected(d, { expenses: i }, now))} />
+    </div>
   );
 }

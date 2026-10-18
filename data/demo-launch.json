@@ -244,15 +244,6 @@
         "direction": "above",
         "threshold": 2,
         "owner": "Tomás Ruiz (R&D)"
-      },
-      {
-        "id": "f-latency",
-        "kind": "failure",
-        "name": "p95 release calendar load time",
-        "unit": "ms",
-        "direction": "above",
-        "threshold": 1500,
-        "owner": "Tomás Ruiz (R&D)"
       }
     ],
     "signoffs": {
@@ -265,7 +256,7 @@
       "rnd": {
         "lead": "Tomás Ruiz",
         "status": "signed",
-        "note": "Latency threshold agreed after load test.",
+        "note": "Rollback threshold agreed after load test.",
         "signedAt": "2026-09-23T11:00:00.000Z"
       },
       "marketing": {
@@ -293,7 +284,27 @@
         "signedAt": "2026-09-25T09:00:00.000Z"
       }
     },
-    "lockedAt": "2026-09-25T09:30:00.000Z"
+    "lockedAt": "2026-09-25T09:30:00.000Z",
+    "expected": {
+      "userExperience": [
+        "Approvers get a one-click approve link in the app and by email",
+        "Every release card shows required checks and who signed off",
+        "Audit trail exports as CSV from the release history",
+        "Median approval in under 4 hours"
+      ],
+      "revenue": {
+        "amount": 288000,
+        "currency": "USD",
+        "period": "first 12 months",
+        "note": "40 Team → Business upgrades × $7,200 per year"
+      },
+      "expenses": {
+        "amount": 165000,
+        "currency": "USD",
+        "period": "first 12 months",
+        "note": "One squad for 3 months, support training, 1 engineer on fixes"
+      }
+    }
   },
   "tier": {
     "tier": "T2",
@@ -465,11 +476,6 @@
             "metricId": "f-rollbacks",
             "value": 0.4,
             "recordedAt": "2026-10-16T08:00:00.000Z"
-          },
-          {
-            "metricId": "f-latency",
-            "value": 980,
-            "recordedAt": "2026-10-16T08:00:00.000Z"
           }
         ],
         "notifiedAt": "2026-10-16T09:15:00.000Z",
@@ -505,11 +511,6 @@
           {
             "metricId": "f-rollbacks",
             "value": 0.6,
-            "recordedAt": "2026-10-18T08:00:00.000Z"
-          },
-          {
-            "metricId": "f-latency",
-            "value": 1120,
             "recordedAt": "2026-10-18T08:00:00.000Z"
           }
         ],

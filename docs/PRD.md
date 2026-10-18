@@ -38,7 +38,10 @@ launch, where is it, and are we ready?"
   the summary, evidence and open questions. Optional AI draft from the brief
   (draft — review before publishing; unsupported facts read "Needs input")
 - **Stage 2 — Problem & metrics alignment:** which problem it solves and for
-  whom; success metrics and failure metrics (each with threshold + owner);
+  whom; **expected results** — how the product should look for the user, and
+  the company impact (revenue increase vs. expenses increase, net and return);
+  exactly **3 success metrics and 2 failure metrics** (each with threshold +
+  owner);
   sign-off by stakeholders, R&D, marketing, sales and two suggested extra
   teams — **Customer Support** (sees failure signals first) and **Legal /
   Compliance** (claims and pricing). Locked alignment feeds every later step

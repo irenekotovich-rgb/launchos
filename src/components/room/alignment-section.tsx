@@ -1,5 +1,7 @@
 import { AlignmentTextEditor, LockAlignment, MetricForm, MetricRemove, SignoffEditor } from "./editors";
 import { EmptyState, Pill, Section } from "./section";
+import { ExpectedResults } from "./expected-results";
+import { METRIC_LIMITS } from "@/lib/types";
 import { fmtDay } from "@/lib/format";
 import { signoffList } from "@/lib/launch-status";
 import type { LaunchDoc, Metric, TeamKey } from "@/lib/types";
@@ -19,6 +21,9 @@ function MetricList({ title, metrics, tone, editable }: { title: string; metrics
       <h3 className="flex items-center gap-2 font-semibold">
         <span className={tone === "good" ? "size-2 rounded-full bg-success" : "size-2 rounded-full bg-destructive"} aria-hidden />
         {title}
+        <span className="ml-auto text-xs font-normal text-muted-foreground">
+          {metrics.length} of {METRIC_LIMITS[tone === "good" ? "success" : "failure"]}
+        </span>
       </h3>
       {metrics.length === 0 ? (
         <p className="mt-2 text-sm text-muted-foreground">None agreed yet.</p>
@@ -50,7 +55,7 @@ export function AlignmentSection({ doc, editable = false }: { doc: LaunchDoc; ed
   return (
     <Section
       id="alignment"
-      title="2 · Problem & metrics alignment"
+      title="Problem & metrics alignment"
       kicker={a.lockedAt ? `Locked ${fmtDay(a.lockedAt)} · ${signed}/6 signed` : `${signed}/6 teams signed`}
     >
       <div className="flex flex-col gap-4">
@@ -70,6 +75,7 @@ export function AlignmentSection({ doc, editable = false }: { doc: LaunchDoc; ed
         ) : (
           <EmptyState>No problem statement yet. Alignment starts with one sentence everyone agrees on.</EmptyState>
         )}
+        <ExpectedResults doc={doc} editable={editable} />
         <div className="grid gap-3 md:grid-cols-2">
           <MetricList title="Success metrics" metrics={a.metrics.filter((m) => m.kind === "success")} tone="good" editable={editable} />
           <MetricList title="Failure metrics" metrics={a.metrics.filter((m) => m.kind === "failure")} tone="bad" editable={editable} />

@@ -146,9 +146,29 @@ export interface TeamSignoff {
   signedAt: IsoDate | null;
 }
 
+/** A money estimate the teams agreed on (a hypothesis, not a forecast of record). */
+export interface Impact {
+  amount: number;
+  currency: string;
+  period: string;
+  note: string;
+}
+
+/** What "done" looks like: for the user, and for the company's P&L. */
+export interface ExpectedResults {
+  /** How the product should look and feel for the user, one short line each. */
+  userExperience: string[];
+  revenue: Impact | null;
+  expenses: Impact | null;
+}
+
+/** Fixed metric framework (owner, 2026-10-18): three success metrics, two failure metrics. */
+export const METRIC_LIMITS = { success: 3, failure: 2 } as const;
+
 export interface Alignment {
   problem: string;
   forWhom: string;
+  expected?: ExpectedResults;
   metrics: Metric[];
   /** Keyed by team so a team can't be missing or duplicated. */
   signoffs: Record<TeamKey, TeamSignoff>;

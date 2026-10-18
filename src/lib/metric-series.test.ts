@@ -7,7 +7,7 @@ const NOW = new Date(DEMO_AUTHORED_AT);
 describe("buildMetricSeries", () => {
   it("one series per agreed metric, four stage points each", () => {
     const series = buildMetricSeries(getDemoLaunch(NOW));
-    expect(series).toHaveLength(6);
+    expect(series).toHaveLength(5);
     expect(series.every((s) => s.points.length === 4)).toBe(true);
   });
   it("judges state in the live stage, like the gate", () => {
