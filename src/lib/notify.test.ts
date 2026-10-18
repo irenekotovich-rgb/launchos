@@ -37,3 +37,32 @@ describe("closed stages are judged when they closed", () => {
     expect(composeStageMessage(doc, doc.rollout.stages[0], later).body).toContain("Gate passed");
   });
 });
+
+describe("review PR #6 cases", () => {
+  it("a breach recorded after close doesn't flip a closed stage's verdict", () => {
+    const doc = getDemoLaunch(NOW);
+    const s0 = doc.rollout.stages[0];
+    s0.readings.push({ metricId: "f-tickets", value: 50, recordedAt: new Date(Date.parse(s0.completedAt!) + 3_600_000).toISOString() });
+    expect(composeStageMessage(doc, s0, NOW).body).toContain("Gate passed");
+  });
+  it("reports overrides and missing failure metrics", () => {
+    const doc = getDemoLaunch(NOW);
+    doc.rollout.stages[0].overrideDecisionId = "d9";
+    expect(composeStageMessage(doc, doc.rollout.stages[0], NOW).body).toContain("Gate overridden");
+    const bare = getDemoLaunch(NOW);
+    bare.alignment.metrics = bare.alignment.metrics.filter((m) => m.kind === "success");
+    expect(composeStageMessage(bare, bare.rollout.stages[0], NOW).body).toContain("had no gate");
+  });
+  it("success metrics read as tracking, not as a miss; no double blank lines", () => {
+    const doc = getDemoLaunch(NOW);
+    const body = composeStageMessage(doc, doc.rollout.stages[0], NOW).body;
+    expect(body).toContain("tracking toward target");
+    expect(body).not.toContain("below target");
+    expect(body).not.toMatch(/\n\n\n/);
+  });
+  it("handles zero recipients", () => {
+    const doc = getDemoLaunch(NOW);
+    doc.rollout.recipients = [];
+    expect(composeStageMessage(doc, doc.rollout.stages[0], NOW).to).toEqual([]);
+  });
+});

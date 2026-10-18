@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Copy, Mail } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
-import { mailtoUrl, type StageMessage as Message } from "@/lib/notify";
+import { MAILTO_MAX_LENGTH, mailtoUrl, type StageMessage as Message } from "@/lib/notify";
 import { cn } from "@/lib/utils";
 
 /** Preview of the stage-complete message with "open in email" and copy. Sending stays with the PMM. */
@@ -36,9 +36,15 @@ export function StageMessage({ message, label }: { message: Message; label: stri
           <p className="break-words"><span className="font-semibold">Subject:</span> {message.subject}</p>
           <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words font-sans text-muted-foreground">{message.body}</pre>
           <div className="flex flex-wrap gap-2">
-            <a href={mailtoUrl(message)} className={cn(buttonVariants({ size: "sm" }), "h-8")}>
-              <Mail /> Open in email
-            </a>
+            {message.to.length > 0 && mailtoUrl(message).length <= MAILTO_MAX_LENGTH ? (
+              <a href={mailtoUrl(message)} className={cn(buttonVariants({ size: "sm" }), "h-8")}>
+                <Mail /> Open in email
+              </a>
+            ) : (
+              <span className="self-center text-xs text-muted-foreground">
+                {message.to.length ? "Too long for an email link — use Copy." : "Add recipients to open it in email."}
+              </span>
+            )}
             <button type="button" onClick={copy} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8")}>
               <Copy /> {copied ? "Copied" : "Copy"}
             </button>

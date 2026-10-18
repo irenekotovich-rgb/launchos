@@ -2,7 +2,7 @@ import { CheckCircle2, CircleDashed, PauseCircle, Radio } from "lucide-react";
 import { Pill, Section } from "./section";
 import { StageMessage } from "./stage-message";
 import { fmtDay } from "@/lib/format";
-import { gateMoment, incrementOf, isFullyRolledOut, rolledOutPercent, stageGate } from "@/lib/launch-status";
+import { READING_MAX_AGE_LABEL, incrementOf, isFullyRolledOut, rolledOutPercent, stageGate } from "@/lib/launch-status";
 import { composeStageMessage } from "@/lib/notify";
 import type { LaunchDoc, RolloutStage, RolloutStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -16,12 +16,12 @@ const STATUS: Record<RolloutStatus, { label: string; tone: "good" | "info" | "ba
 
 function GateLine({ doc, stage, now }: { doc: LaunchDoc; stage: RolloutStage; now: Date }) {
   if (stage.status === "not-started") return null;
-  const g = stageGate(doc, stage, gateMoment(stage, now));
+  const g = stageGate(doc, stage, now);
   if (g.overridden) return <p className="text-sm text-warning">Gate overridden (logged decision)</p>;
   if (g.noFailureMetrics) return <p className="text-sm text-warning">No failure metrics agreed — nothing to gate on</p>;
   if (g.breached.length) return <p className="text-sm text-destructive">Gate failing: {g.breached.length} metric(s) breached</p>;
   if (g.missing.length || g.stale.length)
-    return <p className="text-sm text-warning">Gate waiting: {g.missing.length + g.stale.length} reading(s) missing or older than 48h</p>;
+    return <p className="text-sm text-warning">Gate waiting: {g.missing.length + g.stale.length} reading(s) missing or older than {READING_MAX_AGE_LABEL}</p>;
   return (
     <p className="text-sm text-success">
       Gate passing{g.near.length ? <span className="text-warning"> · {g.near.length} near threshold</span> : null}
@@ -55,7 +55,6 @@ export function RolloutSection({ doc, now }: { doc: LaunchDoc; now: Date }) {
       <ol className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {doc.rollout.stages.map((stage) => {
           const st = STATUS[stage.status];
-          const message = composeStageMessage(doc, stage, now);
           return (
             <li
               key={stage.cumulative}
@@ -90,7 +89,10 @@ export function RolloutSection({ doc, now }: { doc: LaunchDoc; now: Date }) {
                       <span className="text-warning">Stage message not sent yet</span>
                     )}
                   </p>
-                  <StageMessage message={message} label={stage.notifiedAt ? "View the message" : "Compose stage message"} />
+                  <StageMessage
+                    message={composeStageMessage(doc, stage, now)}
+                    label={stage.notifiedAt ? "View the message" : "Compose stage message"}
+                  />
                 </>
               )}
             </li>
