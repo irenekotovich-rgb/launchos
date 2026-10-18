@@ -61,7 +61,27 @@ All optional — without model keys the app still works and shows a graceful "ge
 | `BLOB_READ_WRITE_TOKEN` | Share links + daily budget counter (Vercel Blob); in-memory without it |
 | `LAUNCHOS_DAILY_LIVE_RUNS` | Daily live-generation cap (default 25, `0` = unlimited) |
 | `LAUNCHOS_RUNS_PER_CLIENT_HOUR` | Per-client hourly cap (default 3, `0` = off) |
-| `NEXT_PUBLIC_POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_HOST` | Product analytics (PostHog) |
+| `NEXT_PUBLIC_POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_HOST` | Product analytics (PostHog) — events from docs/metrics.md; wiring lands with the launch milestone (M4) |
+| `LAUNCHOS_QA` | `1` enables the demo's `?now=` time override in production builds, for visual QA only |
+
+### Limits on a public deployment
+The daily cap and per-client throttle are soft guards for a free-tier showcase: the daily
+counter is a non-atomic read-modify-write in Blob (concurrent requests can overshoot by a few
+runs), and per-client limits live in memory per server instance. Per-client identity comes from
+`x-vercel-forwarded-for` on Vercel; when self-hosting behind another proxy, make sure it
+overwrites `x-real-ip` / `x-forwarded-for`, or the per-client limit can be spoofed.
+
+## Visual QA
+```bash
+npx playwright install chromium   # once
+npm run build && LAUNCHOS_QA=1 npm start
+npm run qa:visual                 # every route at 390 / 768 / 1440 into /qa-shots
+npm run qa:long-inputs            # 60-char name, 300-char claim; generation stubbed
+npm run qa:edit-flow | qa:rollout-flow | qa:share-flow | qa:sections | qa:viewport
+npm run qa:consistency            # QA_STUB_CONSISTENCY=1 to use a fixture
+npm run qa:live-generate          # one LIVE generation (uses your keys and budget)
+```
+All scripts honour `BASE_URL` (default http://localhost:3000).
 
 ## License
 MIT © 2026 Iryna Kotovych

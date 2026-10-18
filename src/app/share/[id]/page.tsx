@@ -18,7 +18,14 @@ export const metadata: Metadata = {
 export default async function SharedLaunch({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!SHARE_ID.test(id)) notFound();
-  const doc = await getShare(id).catch(() => null);
+  let doc;
+  try {
+    doc = await getShare(id);
+  } catch (err) {
+    console.error("[share] read failed", err);
+    // A storage outage is not "deleted": say so instead of rendering not-found.
+    throw new Error("Shared launches are temporarily unavailable.");
+  }
   if (!doc) notFound();
   const now = new Date();
   return (

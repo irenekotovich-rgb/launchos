@@ -9,7 +9,14 @@
     "lint": "eslint",
     "qa:visual": "node scripts/qa-visual.mjs",
     "test": "vitest run",
-    "qa:long-inputs": "node scripts/qa-long-inputs.mjs"
+    "qa:long-inputs": "node scripts/qa-long-inputs.mjs",
+    "qa:viewport": "node scripts/qa-viewport.mjs",
+    "qa:sections": "node scripts/qa-sections.mjs",
+    "qa:edit-flow": "node scripts/qa-edit-flow.mjs",
+    "qa:rollout-flow": "node scripts/qa-rollout-flow.mjs",
+    "qa:share-flow": "node scripts/qa-share-flow.mjs",
+    "qa:consistency": "node scripts/qa-consistency.mjs",
+    "qa:live-generate": "node scripts/qa-live-generate.mjs"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.99",
