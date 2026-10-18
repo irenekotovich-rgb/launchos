@@ -89,7 +89,7 @@ export function LaunchRoom({ doc, now, liveClock = true, editable = false }: { d
       <AlignmentSection doc={doc} editable={editable} />
       <PlanSection doc={doc} editable={editable} />
       <RolloutSection doc={doc} now={now} editable={editable} />
-      <MetricsSection doc={doc} />
+      <MetricsSection doc={doc} editable={editable} />
       <AssetsSection doc={doc} editable={editable} />
       <DecisionsSection doc={doc} editable={editable} />
       <Suggestions items={bottlenecks(doc, now)} storageKey={`launchos:dismissed:${doc.meta.id}`} />

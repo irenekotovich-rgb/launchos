@@ -75,8 +75,10 @@ function Chart({ s }: { s: MetricSeries }) {
           const last = drawn.at(-1)!;
           const px = x(last.i);
           const py = y(last.value);
-          // Right of the point when there's room (clear of the line and threshold), else above/below.
-          const right = last.i < s.points.length - 1;
+          // Right of the point when there's room and it clears the threshold label (top-right);
+          // otherwise above or below the point, whichever avoids the threshold line.
+          const clearsThresholdLabel = Math.abs(py + 4 - (ty - 4)) >= 14;
+          const right = last.i < s.points.length - 1 && clearsThresholdLabel;
           const vy = right ? py + 4 : Math.abs(py - 14 - ty) < 10 || py - 10 < 10 ? py + 18 : py - 10;
           return (
             <text x={right ? px + 9 : px} y={vy} textAnchor={right ? "start" : "middle"} className="fill-foreground text-[12px] font-semibold">
