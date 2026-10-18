@@ -7,6 +7,8 @@ const claim300 = "Approve any scheduled release in a single click from the relea
 const browser = await chromium.launch();
 for (const w of [390, 768, 1440]) {
   const p = await browser.newPage({ viewport: { width: w, height: 900 } });
+  // No live model calls in visual QA: answer /api/generate with the graceful "unavailable" state.
+  await p.route("**/api/generate", (r) => r.fulfill({ json: { status: "unavailable", message: "Every model in the fallback chain is busy right now. Your plan was built without AI — try again later." } }));
   await p.goto(B + "/new"); await p.click("button[type=submit]"); await p.waitForTimeout(200);
   await p.screenshot({ path: `qa-shots/new-errors-${w}.png`, fullPage: true });
   await p.fill("#productName", name60); await p.fill("#what", claim300); await p.fill("#who", "Release managers"); await p.fill("#whyNow", "Audit season");

@@ -108,9 +108,13 @@ export function BriefForm() {
       )}
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" size="lg" className="h-11 px-5 text-base" disabled={status === "building"}>
-          {status === "building" ? (<><Loader2 className="animate-spin" /> Building your launch room…</>) : "Build the launch room"}
+          {status === "building" ? (<><Loader2 className="animate-spin" /> Generating your launch room…</>) : "Build the launch room"}
         </Button>
-        <span className="text-sm text-muted-foreground">Nothing is sent anywhere in this step.</span>
+        <span className="text-sm text-muted-foreground" aria-live="polite">
+          {status === "building"
+            ? "Tier, messaging, analysis drafts and six assets — usually 30–90 seconds."
+            : "The brief is sent to the configured AI models; the launch is saved only in this browser."}
+        </span>
       </div>
     </form>
   );

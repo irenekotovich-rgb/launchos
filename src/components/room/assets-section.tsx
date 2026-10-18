@@ -23,7 +23,10 @@ function AssetCard({ asset, findings }: { asset: Asset; findings: ConsistencyFin
           <p className="mt-2 whitespace-pre-line break-words text-muted-foreground">{asset.content}</p>
         </details>
       )}
-      <p className="text-xs font-medium text-warning">Draft — review before publishing</p>
+      <p className="text-xs font-medium text-warning">
+        Draft — review before publishing
+        {asset.modelId && <span className="font-normal text-muted-foreground"> · {asset.modelId}</span>}
+      </p>
       {findings.length > 0 && (
         <div className="flex flex-col gap-2 border-t border-border pt-3">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
