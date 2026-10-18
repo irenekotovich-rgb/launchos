@@ -4,7 +4,7 @@ export default function Home() {
       <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
         Your launch, in one URL.
       </h1>
-      <p className="text-lg text-zinc-300">
+      <p className="text-lg text-muted-foreground">
         LaunchOS is being built in public. The launch room, the demo launch and
         the brief form land in the next pull requests.
       </p>

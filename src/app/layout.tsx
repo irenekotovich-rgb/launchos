@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { AuthorCredit } from "@/components/author-credit";
+import { AUTHOR, AuthorCredit } from "@/components/author-credit";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "LaunchOS — your launch, in one URL",
   description:
     "Open-source launch room: analysis, alignment, plan, staged rollout, metrics and the full asset kit in one place.",
-  authors: [{ name: "Iryna Kotovych", url: "https://www.linkedin.com/in/irynakotovych/" }],
+  authors: [{ name: AUTHOR.name, url: AUTHOR.url }],
 };
 
 export default function RootLayout({
@@ -28,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark ${geistSans.variable} ${geistMono.variable} font-sans`}>
       <body
-        className="flex min-h-dvh flex-col bg-zinc-900 text-zinc-100 antialiased"
+        className="flex min-h-dvh flex-col antialiased"
       >
         {children}
         <AuthorCredit />
