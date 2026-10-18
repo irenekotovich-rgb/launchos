@@ -45,6 +45,10 @@ export interface LaunchMeta {
   author: { name: string; url: string };
   /** Every model call that produced content in this doc (honesty rule). */
   models: ModelRun[];
+  /** Present while a read-only share link exists. The delete token never leaves the owner's device. */
+  share?: { id: string; deleteToken: string; createdAt: IsoDate };
+  /** Set on shared snapshots: when the snapshot was taken. */
+  sharedAt?: IsoDate;
   /** Outcome of the AI generation step; absent for the demo and pre-M2 docs. */
   generation?: {
     status: "live" | "unavailable" | "budget-exhausted";
