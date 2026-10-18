@@ -251,4 +251,6 @@ export interface Decision {
   date: IsoDate;
   text: string;
   author: string;
+  /** Set when the PMM edited the entry after logging it. */
+  editedAt?: IsoDate;
 }

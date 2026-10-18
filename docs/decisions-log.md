@@ -55,3 +55,5 @@
 - 2026-10-18 — Own launches are editable in place (checklist, analysis, alignment incl. metrics and sign-offs, phase close, decisions, recipients); edits are pure functions in lib/edit.ts, persisted to localStorage on every change. The demo stays read-only.
 - 2026-10-18 — Locking alignment requires a problem statement, ≥1 success and ≥1 failure metric and all six sign-offs; it freezes alignment edits, logs a decision and closes the alignment phase (its gate).
 - 2026-10-18 — Editing an AI-drafted analysis field makes it the PMM's text (label drops "AI draft"). Only PMM-authored decisions are editable; system-logged ones are not.
+- 2026-10-18 — Review PR #8: the alignment freeze and "only PMM decisions are editable" are enforced in lib/edit.ts (not just hidden in the UI); edited decisions carry `editedAt` and show "(edited)"; no-op edits return the same doc so nothing is re-saved.
+- 2026-10-18 — Review PR #8: multi-tab editing of the same local launch is last-writer-wins in v1 (deferred; export/import is the hand-off path).

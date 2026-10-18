@@ -73,3 +73,43 @@ describe("edits", () => {
     expect(doc.decisions.at(-1)?.text).toBe("Moved launch a week (legal review)");
   });
 });
+
+describe("review PR #8 guards", () => {
+  const lockedDoc = () => {
+    let doc = E.setAlignmentText(fresh(), "problem", "P", LATER);
+    doc = E.upsertMetric(doc, { kind: "success", name: "S", unit: "", direction: "above", threshold: 1, owner: "o" }, LATER);
+    doc = E.upsertMetric(doc, { kind: "failure", name: "F", unit: "", direction: "above", threshold: 1, owner: "o" }, LATER);
+    for (const t of ["stakeholders", "rnd", "marketing", "sales", "support", "legal"] as const) doc = E.setSignoff(doc, t, { status: "signed" }, LATER);
+    return E.lockAlignment(doc, LATER);
+  };
+  it("locking twice is a no-op", () => {
+    const once = lockedDoc();
+    expect(E.lockAlignment(once, LATER)).toBe(once);
+  });
+  it("alignment edits after lock are refused", () => {
+    const doc = lockedDoc();
+    expect(E.setAlignmentText(doc, "problem", "changed", LATER)).toBe(doc);
+    expect(E.upsertMetric(doc, { kind: "failure", name: "X", unit: "", direction: "above", threshold: 2, owner: "o" }, LATER)).toBe(doc);
+    expect(E.removeMetric(doc, doc.alignment.metrics[0].id, LATER)).toBe(doc);
+    expect(E.setSignoff(doc, "legal", { status: "objected" }, LATER)).toBe(doc);
+  });
+  it("system decisions can't be edited; PMM edits are marked; empty text refused", () => {
+    const doc = fresh(); // d1 is authored by LaunchOS
+    expect(E.editDecision(doc, "d1", "changed", LATER)).toBe(doc);
+    const mine = E.logDecision(doc, "Mine", LATER);
+    const id = mine.decisions.at(-1)!.id;
+    expect(E.editDecision(mine, id, "   ", LATER)).toBe(mine);
+    expect(E.editDecision(mine, id, "Mine, edited", LATER).decisions.at(-1)).toMatchObject({ text: "Mine, edited", editedAt: LATER.toISOString() });
+  });
+  it("saving an AI draft unchanged keeps it a draft", () => {
+    const doc = fresh();
+    doc.analysis.fields.context = { text: "draft", source: "ai-draft", updatedAt: null };
+    expect(E.setAnalysisField(doc, "context", "draft", LATER)).toBe(doc);
+  });
+  it("recipient check reports duplicates and invalid emails; storage is lower-case", () => {
+    const doc = E.addRecipient(fresh(), { name: "A", role: "", email: "A@Example.com", group: "stakeholder" }, LATER);
+    expect(doc.rollout.recipients[0].email).toBe("a@example.com");
+    expect(E.checkRecipient(doc, "a@EXAMPLE.com")).toBe("duplicate");
+    expect(E.checkRecipient(doc, "nope")).toBe("invalid-email");
+  });
+});
