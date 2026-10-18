@@ -14,7 +14,7 @@ export const NEAR_THRESHOLD = 0.1;
 /** Open checklist items surface as a suggestion once the phase ETA is this close. */
 export const CHECKLIST_WARNING_DAYS = 10;
 
-const READING_MAX_AGE_LABEL = `${READING_MAX_AGE_MS / HOUR}h`;
+export const READING_MAX_AGE_LABEL = `${READING_MAX_AGE_MS / HOUR}h`;
 const NEAR_THRESHOLD_LABEL = `${NEAR_THRESHOLD * 100}%`;
 
 export function incrementOf(cumulative: RolloutPercent): number {
@@ -43,11 +43,15 @@ export function metricState(metric: Metric, value: number | undefined): MetricSt
   return margin > 0 && distance <= margin ? "near" : "ok";
 }
 
-/** Most recent reading by parsed time (string order breaks on mixed precision). */
-export function latestReading(stage: RolloutStage, metricId: string) {
+/**
+ * Most recent reading by parsed time (string order breaks on mixed precision).
+ * `asOf` ignores readings recorded after that moment (used to judge closed stages).
+ */
+export function latestReading(stage: RolloutStage, metricId: string, asOf?: Date) {
   let latest: RolloutStage["readings"][number] | undefined;
   for (const r of stage.readings) {
     if (r.metricId !== metricId) continue;
+    if (asOf && Date.parse(r.recordedAt) > asOf.getTime()) continue;
     if (!latest || Date.parse(r.recordedAt) > Date.parse(latest.recordedAt)) latest = r;
   }
   return latest;
@@ -73,7 +77,9 @@ export interface StageGate {
  * breached and every failure metric has a reading younger than 48h. Success metrics
  * are tracked toward launch day, not used to block a stage.
  */
-export function stageGate(doc: LaunchDoc, stage: RolloutStage, now: Date): StageGate {
+export function stageGate(doc: LaunchDoc, stage: RolloutStage, at: Date): StageGate {
+  // A closed stage is judged as of its close: later readings don't count, staleness is measured then.
+  const now = stage.status === "complete" ? gateMoment(stage, at) : at;
   const failureMetrics = doc.alignment.metrics.filter((m) => m.kind === "failure");
   const gate: StageGate = {
     passes: true,
@@ -85,7 +91,7 @@ export function stageGate(doc: LaunchDoc, stage: RolloutStage, now: Date): Stage
     stale: [],
   };
   for (const metric of failureMetrics) {
-    const reading = latestReading(stage, metric.id);
+    const reading = latestReading(stage, metric.id, now);
     if (!reading) {
       gate.missing.push(metric);
       continue;
@@ -101,6 +107,18 @@ export function stageGate(doc: LaunchDoc, stage: RolloutStage, now: Date): Stage
     gate.missing.length === 0 &&
     gate.stale.length === 0;
   return gate;
+}
+
+/**
+ * A closed stage is judged as of the moment it closed; open stages as of `now`.
+ * A "complete" stage without `completedAt` (possible in imported docs) uses its latest reading time.
+ */
+export function gateMoment(stage: RolloutStage, now: Date): Date {
+  if (stage.completedAt) return new Date(stage.completedAt);
+  if (stage.status === "complete" && stage.readings.length) {
+    return new Date(Math.max(...stage.readings.map((r) => Date.parse(r.recordedAt))));
+  }
+  return now;
 }
 
 export function activeStage(doc: LaunchDoc): RolloutStage | undefined {

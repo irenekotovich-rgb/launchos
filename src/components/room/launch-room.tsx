@@ -4,7 +4,9 @@ import { AnalysisSection } from "./analysis-section";
 import { AssetsSection } from "./assets-section";
 import { DecisionsSection } from "./decisions-section";
 import { Overview } from "./overview";
+import { MetricsSection } from "./metrics-section";
 import { PlanSection } from "./plan-section";
+import { RolloutSection } from "./rollout-section";
 import { Suggestions } from "./suggestions";
 import { bottlenecks } from "@/lib/launch-status";
 import type { LaunchDoc } from "@/lib/types";
@@ -14,6 +16,8 @@ const NAV = [
   ["analysis", "Analysis"],
   ["alignment", "Alignment"],
   ["plan", "Checklist"],
+  ["rollout", "Rollout"],
+  ["metrics", "Metrics"],
   ["assets", "Assets"],
   ["decisions", "Decisions"],
 ] as const;
@@ -51,6 +55,8 @@ export function LaunchRoom({ doc, now, liveClock = true }: { doc: LaunchDoc; now
       <AnalysisSection doc={doc} />
       <AlignmentSection doc={doc} />
       <PlanSection doc={doc} />
+      <RolloutSection doc={doc} now={now} />
+      <MetricsSection doc={doc} />
       <AssetsSection doc={doc} />
       <DecisionsSection doc={doc} />
       <Suggestions items={bottlenecks(doc, now)} storageKey={`launchos:dismissed:${doc.meta.id}`} />

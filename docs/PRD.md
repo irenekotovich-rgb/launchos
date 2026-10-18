@@ -80,7 +80,7 @@ multi-user accounts & permissions; multi-launch portfolio views.
 | Model resilience | Ordered fallback chain: primary model → cheap fallback (OpenRouter) → clear "generation unavailable, demo shown" state. A visitor's demo must never die on a rate limit; daily live-run budget guard. |
 | Language | **English only.** No localization, no market/language variants in the product, prompts or demo. Not on the roadmap. |
 | Rollout | Fixed 10/20/30/40 increments (cumulative 10/30/60/100%). A stage can't open until the previous stage's gate passes or is overridden with a logged decision. |
-| Notifications | Recipients = stakeholder group + team leads, stored in the LaunchDoc. v1 generates the message and opens it via `mailto:` with copy fallback — no email service, no stored addresses server-side. |
+| Notifications | Recipients = stakeholder group + team leads, stored in the LaunchDoc. v1 generates the message and opens it via `mailto:` with copy fallback — no email service. Addresses live only in the LaunchDoc on the owner's device; read-only share links strip recipients and sign-off names before upload. |
 | Visual direction | Grey metallic surfaces with a gradient into lilac; accents lilac and orange. Final references collected from the owner once the product works end-to-end. |
 | Honesty | Demo content labeled on every screen; generated assets marked "draft — review before publishing"; model ids + date recorded in the doc. |
 
