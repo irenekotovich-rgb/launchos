@@ -88,7 +88,10 @@ multi-user accounts & permissions; multi-launch portfolio views.
 - **Looks like a template, not a tool** → the consistency checker and the live
   gate are the interactive proof; demo opens on them.
 - **Share links leak internal plans** → unguessable ids, explicit "anyone with
-  the link" warning, delete button; demo uses fictional product only.
+  the link" warning, delete button, 90-day expiry, redaction of emails/names/
+  owners/notes (free text published as written, emails in it flagged before
+  sharing); demo uses fictional product only. Public share endpoint can host
+  arbitrary text on the domain — throttled, size-capped; acceptable for a demo.
 - **Scope creep toward GTM platforms** (Ignition et al. own that space) → v1
   stays single-launch, single-user, English-only; see docs/positioning.md.
 - **Analysis and alignment feel like homework** → every field is optional

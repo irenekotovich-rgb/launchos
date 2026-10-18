@@ -27,11 +27,12 @@ const viewer = await browser.newContext({ viewport: { width: 390, height: 900 } 
 const v = await viewer.newPage();
 const res = await v.goto(url);
 const html = await v.content();
-console.log("shared page:", res.status(), "has emails:", html.includes("@example.com"), "has lead names:", html.includes("Hannah Brooks"), "noindex:", html.includes("noindex"));
+console.log("shared page:", res.status(), "has emails:", html.includes("@example.com"), "has lead names:", html.includes("Hannah Brooks"), "has owners:", html.includes("Priya Nair (Support)"), "noindex:", html.includes("noindex"), "no-referrer:", html.includes('content="no-referrer"'));
 await v.addStyleTag({ content: "aside, button[aria-label^='Show']{display:none!important}" });
 await v.screenshot({ path: "qa-shots/share-view-390.png" });
 // delete
 await p.getByRole("button", { name: "Delete link" }).click();
+await p.getByRole("button", { name: "Delete", exact: true }).click();
 await p.getByText(/Share link deleted/).waitFor();
 const after = await v.goto(url);
 console.log("after delete:", after.status());
