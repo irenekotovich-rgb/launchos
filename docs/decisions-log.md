@@ -37,3 +37,7 @@
 - 2026-10-18 — Metrics dashboard = small multiples, one single-series chart per agreed metric (x = rollout stage, threshold as a hairline reference), status as icon + label, table view toggle; no chart library (dataviz rules: one axis, no legend for single series, text in text tokens).
 - 2026-10-18 — A closed rollout stage's gate is judged at its completion time, not "now" — otherwise every finished stage turns "readings stale" after 48h.
 - 2026-10-18 — Stage messages: composed in-app (to: stakeholders + team leads, subject, metrics at the stage, gate verdict, next stage), sent via "Open in email" (mailto) or Copy.
+- 2026-10-18 — Review PR #6: closed stages ignore readings recorded after completion; a "complete" stage without `completedAt` is judged at its latest reading.
+- 2026-10-18 — Review PR #6: dashboard status = state in the current stage (same as the gate), labelled "at N%"; success metrics not yet met read "Tracking", not "Below target".
+- 2026-10-18 — Review PR #6: chart points are not keyboard-focusable; each chart is one labelled image with a full text summary and the Table view is the accessible, navigable equivalent. Tooltips are mouse-only and close on Esc.
+- 2026-10-18 — Review PR #6: recipient emails stay in the owner's LaunchDoc; share links (M3) must strip recipients and sign-off names — now written into the PRD.
