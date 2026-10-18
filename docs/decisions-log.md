@@ -11,3 +11,6 @@
 - 2026-10-18 — START-HERE.md (Ukrainian owner notes) and linkedin-article-draft.md (unpublished draft) gitignored: the repo is English-only and public.
 - 2026-10-18 — OpenRouter fallback runs on `:free` models only: no payment method added to the owner's account (key capped at $100 spend by OpenRouter's default anyway).
 - 2026-10-18 — PostHog: owner's account is in EU Cloud → host `https://eu.i.posthog.com`; using the existing empty "Default project". Project token stored as a public config var (it's write-only by design and ships to the browser).
+- 2026-10-18 — Secrets flow: keys live in Vercel project env vars and reach .env.local via `vercel env pull` — the agent never writes .env* directly (project deny rule kept intact).
+- 2026-10-18 — Vercel Blob store `launchos-share` created as **private**: share links are served by an API route that reads the doc server-side, so blobs are never publicly addressable.
+- 2026-10-18 — `/install-github-app` is unavailable in the VS Code extension: review bot set up manually (Claude GitHub App + `.github/workflows/claude.yml` + repo secret).
