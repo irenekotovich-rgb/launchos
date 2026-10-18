@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import * as E from "@/lib/edit";
 import { METRIC_LIMITS } from "@/lib/types";
+import { normalizeCurrency, parseAmount } from "@/lib/money";
 import { stageGate } from "@/lib/launch-status";
 import * as R from "@/lib/rollout-edit";
 import { emailsInSnapshot, exportFileName, SHARE_TTL_DAYS, toExportFile } from "@/lib/share";
@@ -891,26 +892,51 @@ export function AnalysisDetailEditors({ field }: { field: AnalysisKey }) {
 function ImpactFields({ legend, value, onSave }: { legend: string; value: Impact | null; onSave: (i: Impact | null) => void }) {
   const id = useId();
   const [f, setF] = useState({ amount: value ? String(value.amount) : "", currency: value?.currency ?? "USD", period: value?.period ?? "first 12 months", note: value?.note ?? "" });
-  const valid = /^\d+(\.\d+)?$/.test(f.amount.trim());
+  const [error, setError] = useState<string | null>(null);
   return (
     <form
       className="flex flex-col gap-2"
       onSubmit={(e) => {
         e.preventDefault();
-        onSave(f.amount.trim() === "" ? null : valid ? { amount: Number(f.amount), currency: f.currency, period: f.period, note: f.note } : value);
+        if (f.amount.trim() === "") {
+          setError(null);
+          return onSave(null);
+        }
+        const amount = parseAmount(f.amount);
+        if (amount === null) return setError("Use digits only, e.g. 250000 or 250,000.");
+        if (normalizeCurrency(f.currency, "") === "") return setError("Currency must be a 3-letter code, e.g. USD or EUR.");
+        setError(null);
+        onSave({ amount, currency: f.currency, period: f.period, note: f.note });
       }}
     >
-      <fieldset className="grid gap-2 sm:grid-cols-[8rem_5rem_1fr]">
-        <legend className="mb-1 text-xs font-semibold">{legend}</legend>
-        <label className="sr-only" htmlFor={`${id}-a`}>{legend} amount</label>
-        <Input id={`${id}-a`} inputMode="decimal" placeholder="Amount" value={f.amount} aria-invalid={f.amount !== "" && !valid} onChange={(e) => setF({ ...f, amount: e.target.value })} />
-        <label className="sr-only" htmlFor={`${id}-c`}>{legend} currency</label>
-        <Input id={`${id}-c`} maxLength={3} value={f.currency} onChange={(e) => setF({ ...f, currency: e.target.value })} />
-        <label className="sr-only" htmlFor={`${id}-p`}>{legend} period</label>
-        <Input id={`${id}-p`} maxLength={40} value={f.period} onChange={(e) => setF({ ...f, period: e.target.value })} />
-        <label className="sr-only" htmlFor={`${id}-n`}>{legend} basis</label>
-        <Input id={`${id}-n`} className="sm:col-span-3" maxLength={140} placeholder="Basis of the estimate" value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} />
-      </fieldset>
+      <p className="text-xs font-semibold">{legend}</p>
+      <div className="grid gap-2 sm:grid-cols-[9rem_5rem_1fr]">
+        {([
+          ["a", "Amount", f.amount, (v: string) => setF({ ...f, amount: v }), 16, "250,000"],
+          ["c", "Currency", f.currency, (v: string) => setF({ ...f, currency: v }), 3, "USD"],
+          ["p", "Period", f.period, (v: string) => setF({ ...f, period: v }), 40, "first 12 months"],
+        ] as const).map(([k, label, val, set, max, ph]) => (
+          <div key={k} className="flex flex-col gap-1">
+            <label className="text-[11px] text-muted-foreground" htmlFor={`${id}-${k}`}>{label}</label>
+            <Input
+              id={`${id}-${k}`}
+              aria-label={`${legend} ${label.toLowerCase()}`}
+              aria-describedby={`${id}-err`}
+              aria-invalid={k === "a" && error !== null}
+              inputMode={k === "a" ? "decimal" : undefined}
+              maxLength={max}
+              placeholder={ph}
+              value={val}
+              onChange={(e) => set(e.target.value)}
+            />
+          </div>
+        ))}
+        <div className="flex flex-col gap-1 sm:col-span-3">
+          <label className="text-[11px] text-muted-foreground" htmlFor={`${id}-n`}>Basis of the estimate</label>
+          <Input id={`${id}-n`} aria-label={`${legend} basis`} maxLength={140} value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} />
+        </div>
+      </div>
+      <p id={`${id}-err`} aria-live="polite" className="text-xs text-destructive empty:hidden">{error ?? ""}</p>
       <Button type="submit" size="sm" variant="outline" className="self-start">Save {legend.toLowerCase()}</Button>
     </form>
   );
