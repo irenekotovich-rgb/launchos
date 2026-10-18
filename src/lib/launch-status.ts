@@ -1,7 +1,8 @@
 // Pure, derived view of a LaunchDoc: where the project is, when it ends, what may block it.
 // No I/O and no clock reads: callers pass `now` so the same doc renders the same everywhere.
 
-import type { LaunchDoc, Metric, Phase, RolloutStage } from "./types";
+import { ROLLOUT_STEPS } from "./types";
+import type { LaunchDoc, Metric, Phase, RolloutPercent, RolloutStage, TeamKey, TeamSignoff } from "./types";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -10,6 +11,22 @@ const DAY = 24 * HOUR;
 export const READING_MAX_AGE_MS = 48 * HOUR;
 /** A failure metric within this fraction of its threshold raises a warning. */
 export const NEAR_THRESHOLD = 0.1;
+/** Open checklist items surface as a suggestion once the phase ETA is this close. */
+export const CHECKLIST_WARNING_DAYS = 10;
+
+const READING_MAX_AGE_LABEL = `${READING_MAX_AGE_MS / HOUR}h`;
+const NEAR_THRESHOLD_LABEL = `${NEAR_THRESHOLD * 100}%`;
+
+export function incrementOf(cumulative: RolloutPercent): number {
+  return ROLLOUT_STEPS.find((s) => s.cumulative === cumulative)!.increment;
+}
+
+export function signoffList(doc: LaunchDoc): (TeamSignoff & { team: TeamKey })[] {
+  return (Object.entries(doc.alignment.signoffs) as [TeamKey, TeamSignoff][]).map(([team, s]) => ({
+    team,
+    ...s,
+  }));
+}
 
 // ---------------------------------------------------------------- metrics
 
@@ -20,15 +37,20 @@ export function metricState(metric: Metric, value: number | undefined): MetricSt
   const crossed = metric.direction === "above" ? value >= metric.threshold : value <= metric.threshold;
   if (metric.kind === "success") return crossed ? "met" : "not-met";
   if (crossed) return "breached";
+  // A zero threshold has no relative margin; never report "near" for it.
   const margin = Math.abs(metric.threshold) * NEAR_THRESHOLD;
   const distance = Math.abs(metric.threshold - value);
-  return distance <= margin ? "near" : "ok";
+  return margin > 0 && distance <= margin ? "near" : "ok";
 }
 
+/** Most recent reading by parsed time (string order breaks on mixed precision). */
 export function latestReading(stage: RolloutStage, metricId: string) {
-  return stage.readings
-    .filter((r) => r.metricId === metricId)
-    .sort((a, b) => b.recordedAt.localeCompare(a.recordedAt))[0];
+  let latest: RolloutStage["readings"][number] | undefined;
+  for (const r of stage.readings) {
+    if (r.metricId !== metricId) continue;
+    if (!latest || Date.parse(r.recordedAt) > Date.parse(latest.recordedAt)) latest = r;
+  }
+  return latest;
 }
 
 // ---------------------------------------------------------------- rollout gate
@@ -36,6 +58,10 @@ export function latestReading(stage: RolloutStage, metricId: string) {
 export interface StageGate {
   /** True when every failure metric has a fresh reading and none is breached. */
   passes: boolean;
+  /** The stage was closed with a logged override instead of a passing gate. */
+  overridden: boolean;
+  /** No failure metrics agreed, so there is nothing to gate on: never a pass. */
+  noFailureMetrics: boolean;
   breached: Metric[];
   near: Metric[];
   missing: Metric[];
@@ -48,8 +74,17 @@ export interface StageGate {
  * are tracked toward launch day, not used to block a stage.
  */
 export function stageGate(doc: LaunchDoc, stage: RolloutStage, now: Date): StageGate {
-  const gate: StageGate = { passes: true, breached: [], near: [], missing: [], stale: [] };
-  for (const metric of doc.alignment.metrics.filter((m) => m.kind === "failure")) {
+  const failureMetrics = doc.alignment.metrics.filter((m) => m.kind === "failure");
+  const gate: StageGate = {
+    passes: true,
+    overridden: stage.overrideDecisionId !== null,
+    noFailureMetrics: failureMetrics.length === 0,
+    breached: [],
+    near: [],
+    missing: [],
+    stale: [],
+  };
+  for (const metric of failureMetrics) {
     const reading = latestReading(stage, metric.id);
     if (!reading) {
       gate.missing.push(metric);
@@ -60,7 +95,11 @@ export function stageGate(doc: LaunchDoc, stage: RolloutStage, now: Date): Stage
     if (state === "breached") gate.breached.push(metric);
     if (state === "near") gate.near.push(metric);
   }
-  gate.passes = gate.breached.length === 0 && gate.missing.length === 0 && gate.stale.length === 0;
+  gate.passes =
+    !gate.noFailureMetrics &&
+    gate.breached.length === 0 &&
+    gate.missing.length === 0 &&
+    gate.stale.length === 0;
   return gate;
 }
 
@@ -86,7 +125,7 @@ export type PhaseState = "done" | "active" | "upcoming" | "overdue";
 
 export function phaseState(phase: Phase, current: Phase | undefined, now: Date): PhaseState {
   if (phase.completedAt) return "done";
-  if (phase !== current) return "upcoming";
+  if (phase.key !== current?.key) return "upcoming";
   return now.getTime() > Date.parse(phase.eta) ? "overdue" : "active";
 }
 
@@ -101,16 +140,27 @@ export function progressPercent(doc: LaunchDoc): number {
   return Math.round((doc.phases.filter((p) => p.completedAt).length / doc.phases.length) * 100);
 }
 
+/** How late a phase closed (or, if open, how late it already is). Never negative. */
+export function phaseSlipMs(phase: Phase, now: Date): number {
+  const end = phase.completedAt ? Date.parse(phase.completedAt) : now.getTime();
+  return Math.max(0, end - Date.parse(phase.eta));
+}
+
 /**
- * Projected launch day: the target date pushed back by however late the current
- * phase already is. Deliberately simple so a stakeholder can check it by hand.
+ * Projected launch day = target date + the larger of
+ *  - the slip carried by the most recently closed phase (a late close that the next
+ *    phase hasn't absorbed stays visible after it closes), and
+ *  - how far the current phase is already past its ETA.
+ * Simple enough for a stakeholder to check by hand.
  */
 export function projectedEndDate(doc: LaunchDoc, now: Date): Date {
   const target = Date.parse(doc.brief.targetDate);
   const current = currentPhase(doc);
-  if (!current) return new Date(target);
-  const slip = Math.max(0, now.getTime() - Date.parse(current.eta));
-  return new Date(target + slip);
+  const closed = doc.phases.filter((p) => p.completedAt);
+  const lastClosed = closed.sort((a, b) => Date.parse(b.completedAt!) - Date.parse(a.completedAt!))[0];
+  const carried = lastClosed ? phaseSlipMs(lastClosed, now) : 0;
+  const open = current ? phaseSlipMs(current, now) : 0;
+  return new Date(target + Math.max(carried, open));
 }
 
 export interface Countdown {
@@ -152,7 +202,10 @@ export interface Suggestion {
   section: SectionId;
 }
 
-/** Possible bottlenecks, most urgent first. Shown as dismissible suggestions, never as blockers. */
+/**
+ * Possible bottlenecks: all "warn" before all "info", otherwise in rule order below.
+ * Shown as dismissible suggestions, never as blockers.
+ */
 export function bottlenecks(doc: LaunchDoc, now: Date): Suggestion[] {
   const out: Suggestion[] = [];
   const current = currentPhase(doc);
@@ -169,7 +222,7 @@ export function bottlenecks(doc: LaunchDoc, now: Date): Suggestion[] {
   }
 
   if (!doc.alignment.lockedAt) {
-    const open = doc.alignment.signoffs.filter((s) => s.status !== "signed");
+    const open = signoffList(doc).filter((s) => s.status !== "signed");
     if (open.length) {
       out.push({
         id: "alignment-open",
@@ -182,6 +235,24 @@ export function bottlenecks(doc: LaunchDoc, now: Date): Suggestion[] {
   }
 
   const stage = activeStage(doc);
+  if (stage?.status === "halted") {
+    out.push({
+      id: `stage-halted-${stage.cumulative}`,
+      severity: "warn",
+      title: `Rollout halted at ${stage.cumulative}%`,
+      detail: "Resume the stage or log a decision to roll back.",
+      section: "rollout",
+    });
+  }
+  if (doc.alignment.metrics.every((m) => m.kind !== "failure")) {
+    out.push({
+      id: "no-failure-metrics",
+      severity: "warn",
+      title: "No failure metrics agreed",
+      detail: "Rollout gates need at least one failure metric with a threshold.",
+      section: "alignment",
+    });
+  }
   if (stage && stage.status !== "not-started") {
     const gate = stageGate(doc, stage, now);
     for (const m of gate.breached) {
@@ -198,7 +269,7 @@ export function bottlenecks(doc: LaunchDoc, now: Date): Suggestion[] {
         id: `metric-near-${m.id}`,
         severity: "warn",
         title: `${m.name} is close to its failure threshold`,
-        detail: `Within 10% of ${m.threshold} ${m.unit} at ${stage.cumulative}%. Owner: ${m.owner}.`,
+        detail: `Within ${NEAR_THRESHOLD_LABEL} of ${m.threshold} ${m.unit} at ${stage.cumulative}%. Owner: ${m.owner}.`,
         section: "metrics",
       });
     }
@@ -207,7 +278,7 @@ export function bottlenecks(doc: LaunchDoc, now: Date): Suggestion[] {
         id: `readings-stale-${stage.cumulative}`,
         severity: "info",
         title: "Metric readings need an update",
-        detail: `${gate.stale.length + gate.missing.length} failure metric(s) have no reading from the last 48h, so the ${stage.cumulative}% gate can't pass.`,
+        detail: `${gate.stale.length + gate.missing.length} failure metric(s) have no reading from the last ${READING_MAX_AGE_LABEL}, so the ${stage.cumulative}% gate can't pass.`,
         section: "metrics",
       });
     }
@@ -236,13 +307,15 @@ export function bottlenecks(doc: LaunchDoc, now: Date): Suggestion[] {
   }
 
   if (current) {
-    const open = doc.checklist.filter((c) => c.phase === current.key && !c.done);
+    // Open items from any unfinished phase count: phases may overlap.
+    const unfinished = new Set(doc.phases.filter((p) => !p.completedAt).map((p) => p.key));
+    const open = doc.checklist.filter((c) => unfinished.has(c.phase) && !c.done);
     const daysLeft = (Date.parse(current.eta) - now.getTime()) / DAY;
-    if (open.length && daysLeft <= 10) {
+    if (open.length && daysLeft <= CHECKLIST_WARNING_DAYS) {
       out.push({
         id: `checklist-open-${current.key}`,
         severity: "info",
-        title: `${open.length} open checklist item${open.length === 1 ? "" : "s"} in ${current.name}`,
+        title: `${open.length} open checklist item${open.length === 1 ? "" : "s"} before ${current.name} closes`,
         detail: open.map((c) => `${c.label} (${c.owner})`).join("; "),
         section: "plan",
       });

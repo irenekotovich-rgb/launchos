@@ -24,6 +24,14 @@ export function shiftDates<T>(value: T, offsetMs: number): T {
   return value;
 }
 
+const HOUR = 3_600_000;
+
+/**
+ * The offset is snapped to whole hours, so a server render and a client render within
+ * the same hour produce identical docs (no hydration mismatch). Pages that show the demo
+ * render per request and pass `now` down; they are never statically prerendered.
+ */
 export function getDemoLaunch(now: Date = new Date()): LaunchDoc {
-  return shiftDates(demoJson as LaunchDoc, now.getTime() - DEMO_AUTHORED_AT);
+  const offset = Math.floor((now.getTime() - DEMO_AUTHORED_AT) / HOUR) * HOUR;
+  return shiftDates(demoJson as unknown as LaunchDoc, offset);
 }
