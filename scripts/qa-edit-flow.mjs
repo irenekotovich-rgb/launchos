@@ -24,9 +24,15 @@ for (const w of [390, 1440]) {
   console.log(w, "focus returned after Escape:", focused === "Add problem statement");
   await p.getByRole("button", { name: "Add problem statement" }).click();
   await p.getByLabel("problem statement").fill("Approvals happen in Slack, so there is no audit trail.");
-  await p.getByRole("button", { name: "Save" }).click();
+  await p.getByRole("button", { name: "Save", exact: true }).click();
   // metrics
-  for (const [kind, name, thr, unit, owner] of [["success", "Workspaces using approvals", "15", "%", "PM"], ["failure", "Approval tickets per 1k workspaces", "12", "tickets", "Support"]]) {
+  for (const [kind, name, thr, unit, owner] of [
+    ["success", "Workspaces using approvals", "15", "%", "PM"],
+    ["success", "Median approval time", "4", "h", "PM"],
+    ["success", "Upgrades citing approvals", "40", "workspaces", "Sales"],
+    ["failure", "Approval tickets per 1k workspaces", "12", "tickets", "Support"],
+    ["failure", "Rollbacks due to approval bugs", "2", "%", "R&D"],
+  ]) {
     await p.getByRole("button", { name: `Add ${kind} metric` }).click();
     const form = p.locator("#alignment form");
     await form.getByLabel("Metric name", { exact: true }).fill(name);
@@ -35,6 +41,14 @@ for (const w of [390, 1440]) {
     await form.getByLabel("Owner", { exact: true }).fill(owner);
     await form.getByRole("button", { name: "Add metric" }).click();
   }
+  // expected results + impact
+  await p.getByRole("button", { name: "Add expected user experience, one per line" }).click();
+  await p.getByLabel("expected user experience, one per line").fill("Approve in one click\nAudit trail on every release");
+  await p.getByRole("button", { name: "Save", exact: true }).click();
+  await p.getByLabel("Revenue increase amount").fill("288000");
+  await p.getByRole("button", { name: "Save revenue increase" }).click();
+  await p.getByLabel("Expenses increase amount").fill("165000");
+  await p.getByRole("button", { name: "Save expenses increase" }).click();
   await p.locator("#alignment").screenshot({ path: `qa-shots/edit-alignment-${w}.png` });
   // sign-offs
   for (const team of ["Stakeholders", "R&D", "Marketing", "Sales", "Customer Support", "Legal / Compliance"]) {

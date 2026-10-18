@@ -78,7 +78,7 @@ describe("gates and dates", () => {
     const threeDaysLater = new Date(DEMO_AUTHORED_AT + 3 * 86_400_000);
     const gate = stageGate(doc, doc.rollout.stages[1], threeDaysLater);
     expect(gate.passes).toBe(false);
-    expect(gate.stale).toHaveLength(3);
+    expect(gate.stale).toHaveLength(2);
   });
 
   it("pushes launch day back by the current phase's slip", () => {
@@ -132,7 +132,7 @@ describe("review follow-ups", () => {
     const doc = demo();
     const gate = stageGate(doc, doc.rollout.stages[2], NOW);
     expect(gate.passes).toBe(false);
-    expect(gate.missing).toHaveLength(3);
+    expect(gate.missing).toHaveLength(2);
     doc.alignment.metrics = doc.alignment.metrics.filter((m) => m.kind === "success");
     const empty = stageGate(doc, doc.rollout.stages[1], NOW);
     expect(empty).toMatchObject({ passes: false, noFailureMetrics: true });

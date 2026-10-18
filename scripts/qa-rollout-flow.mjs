@@ -24,13 +24,12 @@ for (const w of [390, 1440]) {
   const m = p.locator("#metrics");
   await m.getByLabel("Approval support tickets per 1k workspaces (tickets)").fill("6.1");
   await m.getByLabel("Releases rolled back due to approval bugs (%)").fill("0.3");
-  await m.getByLabel("p95 release calendar load time (ms)").fill("950");
   await m.getByRole("button", { name: "Save readings" }).click();
   await p.getByRole("button", { name: "Complete 10% stage" }).click();
   await p.getByRole("button", { name: "Compose stage message" }).click();
   await p.getByRole("button", { name: "Copy" }).click();
   await p.locator("#rollout").screenshot({ path: `qa-shots/rollout-flow-${w}.png` });
-  await m.getByLabel(/Import CSV/).fill("stage,metric,value\n30,f-tickets,13.5\n30,f-rollbacks,0.4\n30,p95 release calendar load time,1100\n40,f-latency,1");
+  await m.getByLabel(/Import CSV/).fill("stage,metric,value\n30,f-tickets,13.5\n30,f-rollbacks,0.4\n40,f-rollbacks,1");
   await m.getByRole("button", { name: "Import" }).click();
   await m.screenshot({ path: `qa-shots/rollout-readings-${w}.png` });
   const gateFail = await p.getByRole("button", { name: "Close with override…" }).count();

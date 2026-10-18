@@ -41,9 +41,9 @@ describe("rollout edits", () => {
   it("closing 100% flags the rollout and closes the phase", () => {
     let doc = demo();
     doc = R.completeStage(doc, 30, NOW);
-    doc = R.addReadings(doc, 60, { "f-tickets": 8, "f-rollbacks": 0.5, "f-latency": 1000 }, NOW);
+    doc = R.addReadings(doc, 60, { "f-tickets": 8, "f-rollbacks": 0.5 }, NOW);
     doc = R.completeStage(doc, 60, NOW);
-    doc = R.addReadings(doc, 100, { "f-tickets": 7, "f-rollbacks": 0.4, "f-latency": 990 }, NOW);
+    doc = R.addReadings(doc, 100, { "f-tickets": 7, "f-rollbacks": 0.4 }, NOW);
     doc = R.completeStage(doc, 100, NOW);
     expect(doc.rollout.stages.every((s) => s.status === "complete")).toBe(true);
     expect(doc.phases.find((p) => p.key === "rollout")?.completedAt).toBe(NOW.toISOString());
@@ -81,8 +81,8 @@ describe("rollout edits", () => {
       "30,median release approval time,4.1,2026-10-18T07:00:00Z",
       "60,f-tickets,3",
       "30,unknown metric,1",
-      "30,f-latency,fast",
-      "40,f-latency,900",
+      "30,f-rollbacks,fast",
+      "40,f-rollbacks,900",
     ].join("\r\n");
     const res = R.importReadingsCsv(demo(), csv, NOW);
     expect(res.imported).toBe(2);

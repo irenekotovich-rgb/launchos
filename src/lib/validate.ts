@@ -2,6 +2,7 @@
 // Not a full schema: it checks what the UI dereferences, so bad data shows a message instead of crashing.
 
 import { LAUNCH_DOC_SCHEMA_VERSION } from "./types";
+import { cleanExpected } from "./money";
 import type { Highlight, LaunchDoc } from "./types";
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
@@ -51,5 +52,6 @@ export function sanitizeLaunchDoc(doc: LaunchDoc): LaunchDoc {
     const points = Array.isArray(f.points) ? f.points.filter((p): p is string => typeof p === "string").slice(0, 8) : undefined;
     fields[k] = { ...f, text: typeof f.text === "string" ? f.text : "", highlights, points };
   }
-  return { ...doc, analysis: { ...doc.analysis, fields } };
+  const expected = cleanExpected(doc.alignment.expected);
+  return { ...doc, analysis: { ...doc.analysis, fields }, alignment: { ...doc.alignment, expected } };
 }

@@ -26,8 +26,12 @@ describe("edits", () => {
     expect(E.lockBlockers(doc)).toHaveLength(4);
     expect(E.lockAlignment(doc, LATER).alignment.lockedAt).toBeNull();
     doc = E.setAlignmentText(doc, "problem", "Approvals live in Slack.", LATER);
-    doc = E.upsertMetric(doc, { kind: "success", name: "Adoption", unit: "%", direction: "above", threshold: 15, owner: "PM" }, LATER);
-    doc = E.upsertMetric(doc, { kind: "failure", name: "Tickets", unit: "tickets", direction: "above", threshold: 12, owner: "Support" }, LATER);
+    for (const name of ["Adoption", "Approval time", "Upgrades"]) {
+      doc = E.upsertMetric(doc, { kind: "success", name, unit: "%", direction: "above", threshold: 15, owner: "PM" }, LATER);
+    }
+    for (const name of ["Tickets", "Rollbacks"]) {
+      doc = E.upsertMetric(doc, { kind: "failure", name, unit: "", direction: "above", threshold: 12, owner: "Support" }, LATER);
+    }
     for (const team of ["stakeholders", "rnd", "marketing", "sales", "support", "legal"] as const) {
       doc = E.setSignoff(doc, team, { lead: "Lead", status: "signed" }, LATER);
     }
@@ -77,8 +81,8 @@ describe("edits", () => {
 describe("review PR #8 guards", () => {
   const lockedDoc = () => {
     let doc = E.setAlignmentText(fresh(), "problem", "P", LATER);
-    doc = E.upsertMetric(doc, { kind: "success", name: "S", unit: "", direction: "above", threshold: 1, owner: "o" }, LATER);
-    doc = E.upsertMetric(doc, { kind: "failure", name: "F", unit: "", direction: "above", threshold: 1, owner: "o" }, LATER);
+    for (const n of ["S1", "S2", "S3"]) doc = E.upsertMetric(doc, { kind: "success", name: n, unit: "", direction: "above", threshold: 1, owner: "o" }, LATER);
+    for (const n of ["F1", "F2"]) doc = E.upsertMetric(doc, { kind: "failure", name: n, unit: "", direction: "above", threshold: 1, owner: "o" }, LATER);
     for (const t of ["stakeholders", "rnd", "marketing", "sales", "support", "legal"] as const) doc = E.setSignoff(doc, t, { status: "signed" }, LATER);
     return E.lockAlignment(doc, LATER);
   };
@@ -186,5 +190,39 @@ describe("analysis detail edits", () => {
     expect(next.analysis.fields.context.highlights?.map((h) => h.value)).toEqual(["1", "2", "3"]);
     expect(next.analysis.fields.context.points).toEqual(["one", "two"]);
     expect(next.analysis.fields.context.source).toBe("manual");
+  });
+});
+
+describe("metric framework and expected results (owner, 2026-10-18)", () => {
+  it("allows three success and two failure metrics, no more", () => {
+    let doc = fresh();
+    for (let i = 0; i < 5; i++) doc = E.upsertMetric(doc, { kind: "success", name: `s${i}`, unit: "", direction: "above", threshold: 1, owner: "o" }, LATER);
+    for (let i = 0; i < 4; i++) doc = E.upsertMetric(doc, { kind: "failure", name: `f${i}`, unit: "", direction: "above", threshold: 1, owner: "o" }, LATER);
+    expect(doc.alignment.metrics.filter((m) => m.kind === "success")).toHaveLength(3);
+    expect(doc.alignment.metrics.filter((m) => m.kind === "failure")).toHaveLength(2);
+  });
+  it("sets user experience and impact; cleans input; freezes with alignment", () => {
+    const doc = E.setExpected(fresh(), {
+      userExperience: [" One click ", "", "Audit export"],
+      revenue: { amount: 288000, currency: "usd", period: " 12 months ", note: "" },
+      expenses: { amount: -5, currency: "USD", period: "", note: "" },
+    }, LATER);
+    expect(doc.alignment.expected).toEqual({
+      userExperience: ["One click", "Audit export"],
+      revenue: { amount: 288000, currency: "USD", period: "12 months", note: "" },
+      expenses: null,
+    });
+    const locked = { ...doc, alignment: { ...doc.alignment, lockedAt: LATER.toISOString() } };
+    expect(E.setExpected(locked, { userExperience: ["x"] }, LATER)).toBe(locked);
+  });
+});
+
+describe("kind flip can't bypass the metric framework (review PR #14)", () => {
+  it("refuses turning a success metric into a third failure metric", () => {
+    let doc = fresh();
+    doc = E.upsertMetric(doc, { id: "s1", kind: "success", name: "S", unit: "", direction: "above", threshold: 1, owner: "o" }, LATER);
+    for (const n of ["F1", "F2"]) doc = E.upsertMetric(doc, { kind: "failure", name: n, unit: "", direction: "above", threshold: 1, owner: "o" }, LATER);
+    const flipped = E.upsertMetric(doc, { id: "s1", kind: "failure", name: "S", unit: "", direction: "above", threshold: 1, owner: "o" }, LATER);
+    expect(flipped).toBe(doc);
   });
 });
