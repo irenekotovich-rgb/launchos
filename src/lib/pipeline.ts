@@ -10,7 +10,18 @@ import type { AnalysisField, AnalysisKey, LaunchBrief, LaunchDoc, TeamKey, TeamS
 const ANALYSIS_KEYS: AnalysisKey[] = ["context", "environment", "competitors", "economics", "capacity", "audience"];
 const TEAMS: TeamKey[] = ["stakeholders", "rnd", "marketing", "sales", "support", "legal"];
 
+/** Works on non-secure origins too (e.g. a self-hosted fork on http://192.168…). */
+function newId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" && globalThis.isSecureContext !== false) {
+    return crypto.randomUUID();
+  }
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 export async function runGeneration(brief: LaunchBrief, now: Date = new Date()): Promise<LaunchDoc> {
+  if (!(Date.parse(brief.targetDate) > now.getTime())) throw new RangeError("Launch day must be in the future.");
   const tier = suggestTier(brief, now);
   const phases = derivePhases(tier.tier, brief.targetDate, now);
   const stamp = now.toISOString();
@@ -20,7 +31,7 @@ export async function runGeneration(brief: LaunchBrief, now: Date = new Date()):
   return {
     schemaVersion: LAUNCH_DOC_SCHEMA_VERSION,
     meta: {
-      id: crypto.randomUUID(),
+      id: newId(),
       mode: "own",
       createdAt: stamp,
       updatedAt: stamp,

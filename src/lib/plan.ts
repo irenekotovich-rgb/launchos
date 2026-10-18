@@ -28,7 +28,7 @@ const PHASE_SPLIT: { key: PhaseKey; name: string; share: number; gate: string }[
   { key: "rollout", name: "Staged rollout", share: 0.36, gate: "No failure metric breached at each stage; 100% by launch day" },
 ];
 
-/** Where each rollout stage starts, as a share of the rollout phase. */
+/** Where each rollout stage starts, as a share of the rollout phase. 100% starts on launch day. */
 const STAGE_START_SHARE = [0, 0.25, 0.55, 1] as const;
 
 const TIER_RATIONALE: Record<Tier, string> = {
@@ -40,6 +40,7 @@ const TIER_RATIONALE: Record<Tier, string> = {
 /**
  * Placeholder heuristic until the AI tier step lands (M2): more claims and more
  * runway signal a bigger launch. Always overridable, and labeled as a suggestion.
+ * Known inversion (logged): runway should follow from tier, not the other way round.
  */
 export function suggestTier(brief: LaunchBrief, now: Date): TierDecision {
   const daysOut = (Date.parse(brief.targetDate) - now.getTime()) / DAY;
@@ -47,8 +48,17 @@ export function suggestTier(brief: LaunchBrief, now: Date): TierDecision {
   return { tier, rationale: TIER_RATIONALE[tier], overrideDecisionId: null };
 }
 
+/** Non-null when the runway is shorter than the tier needs; the plan still compresses. */
+export function runwayWarning(tier: Tier, targetDate: string, now: Date): string | null {
+  const days = Math.floor((Date.parse(targetDate) - now.getTime()) / DAY);
+  const needed = RUNWAY_DAYS[tier];
+  if (days >= needed) return null;
+  return `Runway is ${days} day${days === 1 ? "" : "s"}; a ${tier} launch usually needs ${needed}. Phases are compressed to fit.`;
+}
+
 export function derivePhases(tier: Tier, targetDate: string, now: Date): Phase[] {
   const end = Date.parse(targetDate);
+  if (!(end > now.getTime())) throw new RangeError("Launch day must be in the future.");
   // Never plan into the past: a short runway compresses phases, it doesn't backdate them.
   const start = Math.max(now.getTime(), end - RUNWAY_DAYS[tier] * DAY);
   const span = end - start;

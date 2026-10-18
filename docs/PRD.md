@@ -57,7 +57,8 @@ launch, where is it, and are we ready?"
 - **Staged rollout:** 10% → +20% (30%) → +30% (60%) → +40% (100%) of the
   audience. Each stage has its own gate (metrics vs. thresholds) and ends with
   a stage-complete message to the stakeholder group and every involved team
-  lead. The last stage flags the launch "rolled out to 100%"
+  lead. The 100% stage opens on launch day itself; it flags the launch
+  "rolled out to 100%"
 - **Metrics dashboard:** the success/failure metrics agreed in Stage 2,
   charted per rollout stage against their thresholds. v1 values are entered
   manually or imported as CSV (no analytics integration)

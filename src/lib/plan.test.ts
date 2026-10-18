@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { derivePhases, deriveRollout, RUNWAY_DAYS, suggestTier } from "./plan";
+import { derivePhases, deriveRollout, RUNWAY_DAYS, runwayWarning, suggestTier } from "./plan";
 import { runGeneration } from "./pipeline";
 import type { LaunchBrief } from "./types";
 
@@ -45,5 +45,24 @@ describe("plan derivation", () => {
     expect(doc.meta.author.name).toBe("Iryna Kotovych");
     expect(Object.keys(doc.alignment.signoffs)).toHaveLength(6);
     expect(doc.assets).toEqual([]);
+  });
+});
+
+describe("plan guards (review PR #4)", () => {
+  it("refuses a launch day at or before now", async () => {
+    expect(() => derivePhases("T2", NOW.toISOString(), NOW)).toThrow(RangeError);
+    await expect(runGeneration(brief(-1), NOW)).rejects.toThrow(RangeError);
+  });
+  it("tier boundaries: 4 claims and 35 days make T1", () => {
+    expect(suggestTier(brief(35, 4), NOW).tier).toBe("T1");
+    expect(suggestTier(brief(34.9, 4), NOW).tier).toBe("T2");
+  });
+  it("T3 runway is 14 days", () => {
+    const phases = derivePhases("T3", brief(60).targetDate, NOW);
+    expect(Date.parse(phases[5].eta) - Date.parse(phases[0].start)).toBe(14 * DAY);
+  });
+  it("warns when the runway is shorter than the tier needs", () => {
+    expect(runwayWarning("T1", brief(10).targetDate, NOW)).toMatch(/Runway is 10 days; a T1 launch usually needs 42/);
+    expect(runwayWarning("T3", brief(20).targetDate, NOW)).toBeNull();
   });
 });
