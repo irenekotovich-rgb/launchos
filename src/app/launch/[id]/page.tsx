@@ -9,7 +9,7 @@ export default async function LaunchPage({ params }: { params: Promise<{ id: str
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 pb-16 pt-6">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 pb-28 pt-2">
         <OwnLaunch id={id} />
       </main>
     </>
