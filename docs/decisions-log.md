@@ -41,3 +41,9 @@
 - 2026-10-18 — Review PR #6: dashboard status = state in the current stage (same as the gate), labelled "at N%"; success metrics not yet met read "Tracking", not "Below target".
 - 2026-10-18 — Review PR #6: chart points are not keyboard-focusable; each chart is one labelled image with a full text summary and the Table view is the accessible, navigable equivalent. Tooltips are mouse-only and close on Esc.
 - 2026-10-18 — Review PR #6: recipient emails stay in the owner's LaunchDoc; share links (M3) must strip recipients and sign-off names — now written into the PRD.
+- 2026-10-18 — Models: primary `gemini-3.5-flash` (gemini-2.5-flash is closed to new keys); fallbacks `openrouter/nvidia/nemotron-3-super-120b-a12b:free` → `openrouter/google/gemma-4-31b-it:free`. All env-overridable (LAUNCHOS_PRIMARY_MODEL, LAUNCHOS_FALLBACK_MODELS).
+- 2026-10-18 — Generation degrades per step: tier/messaging failing on every model → whole run "unavailable" (no consistent assets possible without the messaging block); analysis or a single asset failing → the rest of the kit still ships and the room says how many failed.
+- 2026-10-18 — The AI tier replaces the heuristic and the plan (phases, checklist, rollout) is re-derived from it, logged as a decision in the launch.
+- 2026-10-18 — Daily budget: 25 live runs per UTC day by default (LAUNCHOS_DAILY_LIVE_RUNS, 0 = unlimited for forks), counter in the private Blob store, in-memory without a token. Fails open on storage errors: all configured models are free-tier, so the worst case is rate-limiting, not cost.
+- 2026-10-18 — Visual QA never calls models: Playwright stubs /api/generate with the "unavailable" state; one explicit live run (`scripts/qa-live-generate.mjs`) verifies the real chain.
+- 2026-10-18 — Model output normalised (some models double-escape newlines inside JSON strings).
