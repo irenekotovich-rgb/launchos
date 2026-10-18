@@ -17,7 +17,12 @@ for (const w of [390, 1440]) {
   await p.waitForURL(/launch\//);
   await p.addStyleTag({ content: "aside, button[aria-label^='Show']{display:none!important}" });
   // alignment: problem
-  await p.getByRole("button", { name: "Edit problem statement" }).click();
+  // keyboard: Escape closes the editor and returns focus to its trigger
+  await p.getByRole("button", { name: "Add problem statement" }).click();
+  await p.keyboard.press("Escape");
+  const focused = await p.evaluate(() => document.activeElement?.getAttribute("aria-label"));
+  console.log(w, "focus returned after Escape:", focused === "Add problem statement");
+  await p.getByRole("button", { name: "Add problem statement" }).click();
   await p.getByLabel("problem statement").fill("Approvals happen in Slack, so there is no audit trail.");
   await p.getByRole("button", { name: "Save" }).click();
   // metrics

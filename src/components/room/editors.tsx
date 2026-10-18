@@ -3,7 +3,7 @@
 // Inline editors for own launches. Each one applies a pure edit from lib/edit.ts through the
 // LaunchEditor context; the owner component persists the result. The demo never renders these.
 
-import { createContext, useContext, useId, useState } from "react";
+import { createContext, useContext, useEffect, useId, useRef, useState } from "react";
 import { Check, Circle, Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,15 @@ type Apply = (edit: (doc: LaunchDoc, now: Date) => LaunchDoc) => void;
 const Ctx = createContext<{ doc: LaunchDoc; apply: Apply } | null>(null);
 
 export function LaunchEditor({ doc, onChange, children }: { doc: LaunchDoc; onChange: (d: LaunchDoc) => void; children: React.ReactNode }) {
-  const apply: Apply = (edit) => onChange(edit(doc, new Date()));
+  // Edits chain off the latest doc, so two edits in one tick (e.g. blur + click) don't drop one.
+  const latest = useRef(doc);
+  latest.current = doc;
+  const apply: Apply = (edit) => {
+    const next = edit(latest.current, new Date());
+    if (next === latest.current) return;
+    latest.current = next;
+    onChange(next);
+  };
   return <Ctx.Provider value={{ doc, apply }}>{children}</Ctx.Provider>;
 }
 
@@ -28,7 +36,18 @@ function useEditor() {
 
 const iconBtn = "grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground";
 
-/** Click-to-edit text with explicit Save / Cancel. */
+/** Returns focus to `ref` after the editor closes (the trigger re-mounts, so focus would drop to <body>). */
+function useReturnFocus(open: boolean) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (wasOpen.current && !open) ref.current?.focus();
+    wasOpen.current = open;
+  }, [open]);
+  return ref;
+}
+
+/** Click-to-edit text with explicit Save / Cancel; Enter saves single-line fields, Escape cancels. */
 export function InlineText({
   value,
   label,
@@ -46,25 +65,35 @@ export function InlineText({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
+  const trigger = useReturnFocus(editing);
   const id = useId();
+  const verb = value ? "Edit" : "Add";
   if (!editing) {
     return (
       <button
+        ref={trigger}
         type="button"
         onClick={() => {
           setDraft(value);
           setEditing(true);
         }}
-        className="group inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-        aria-label={`Edit ${label}`}
+        className="inline-flex min-h-8 items-center gap-1 text-xs font-semibold text-primary hover:underline"
+        aria-label={`${verb} ${label}`}
       >
-        <Pencil className="size-3.5" aria-hidden /> {value ? "Edit" : "Add"}
+        <Pencil className="size-3.5" aria-hidden /> {verb}
       </button>
     );
   }
   const Field = multiline ? Textarea : Input;
   return (
-    <div className="flex w-full flex-col gap-2">
+    <form
+      className="flex w-full flex-col gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSave(draft.trim());
+        setEditing(false);
+      }}
+    >
       <label htmlFor={id} className="sr-only">{label}</label>
       <Field
         id={id}
@@ -73,22 +102,19 @@ export function InlineText({
         maxLength={maxLength}
         placeholder={placeholder}
         onChange={(e: React.ChangeEvent<HTMLInputElement & HTMLTextAreaElement>) => setDraft(e.target.value)}
-        onKeyDown={(e: React.KeyboardEvent) => e.key === "Escape" && setEditing(false)}
+        onKeyDown={(e: React.KeyboardEvent) => {
+          if (e.key === "Escape") {
+            e.stopPropagation();
+            setEditing(false);
+          }
+        }}
         {...(multiline ? { rows: 3 } : {})}
       />
       <div className="flex gap-2">
-        <Button
-          size="sm"
-          onClick={() => {
-            onSave(draft.trim());
-            setEditing(false);
-          }}
-        >
-          Save
-        </Button>
-        <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
+        <Button type="submit" size="sm">Save</Button>
+        <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
       </div>
-    </div>
+    </form>
   );
 }
 
@@ -103,7 +129,7 @@ export function ChecklistToggle({ id, done, label }: { id: string; done: boolean
       onClick={() => apply((d, now) => E.toggleChecklist(d, id, now))}
       className={cn(iconBtn, "-m-2")}
     >
-      {done ? <Check className="size-4 text-success" /> : <Circle className="size-4" />}
+      {done ? <Check className="size-4 text-success" aria-hidden /> : <Circle className="size-4" aria-hidden />}
     </button>
   );
 }
@@ -130,7 +156,7 @@ export function MetricRemove({ metric }: { metric: Metric }) {
   if (doc.alignment.lockedAt) return null;
   return (
     <button type="button" className={iconBtn} aria-label={`Remove metric ${metric.name}`} onClick={() => apply((d, now) => E.removeMetric(d, metric.id, now))}>
-      <Trash2 className="size-4" />
+      <Trash2 className="size-4" aria-hidden />
     </button>
   );
 }
@@ -139,20 +165,28 @@ export function MetricForm({ kind }: { kind: Metric["kind"] }) {
   const { doc, apply } = useEditor();
   const [open, setOpen] = useState(false);
   const [f, setF] = useState({ name: "", unit: "", direction: "above" as Metric["direction"], threshold: "", owner: "" });
+  const trigger = useReturnFocus(open);
   const id = useId();
   if (doc.alignment.lockedAt) return null;
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+      <button ref={trigger} type="button" onClick={() => setOpen(true)} className="mt-2 inline-flex min-h-8 items-center gap-1 text-xs font-semibold text-primary hover:underline">
         <Plus className="size-3.5" aria-hidden /> Add {kind} metric
       </button>
     );
   }
   const threshold = Number(f.threshold);
-  const valid = f.name.trim() && f.owner.trim() && f.threshold !== "" && Number.isFinite(threshold);
+  const valid = f.name.trim() && f.owner.trim() && f.threshold.trim() !== "" && Number.isFinite(threshold);
   return (
     <form
       className="mt-3 grid gap-2 rounded-lg border border-border p-3"
+      aria-label={`New ${kind} metric`}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          setOpen(false);
+        }
+      }}
       onSubmit={(e) => {
         e.preventDefault();
         if (!valid) return;
@@ -162,7 +196,7 @@ export function MetricForm({ kind }: { kind: Metric["kind"] }) {
       }}
     >
       <label className="text-xs font-semibold" htmlFor={`${id}-name`}>Metric name</label>
-      <Input id={`${id}-name`} value={f.name} maxLength={120} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder={kind === "success" ? "Workspaces using the feature" : "Support tickets per 1k workspaces"} />
+      <Input id={`${id}-name`} autoFocus value={f.name} maxLength={120} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder={kind === "success" ? "Workspaces using the feature" : "Support tickets per 1k workspaces"} />
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <div className="flex flex-col gap-1">
           <label className="text-xs font-semibold" htmlFor={`${id}-dir`}>{kind === "success" ? "Target is" : "Fails when"}</label>
@@ -185,9 +219,10 @@ export function MetricForm({ kind }: { kind: Metric["kind"] }) {
         </div>
       </div>
       <div className="flex gap-2">
-        <Button type="submit" size="sm" disabled={!valid}>Add metric</Button>
+        <Button type="submit" size="sm" disabled={!valid} aria-describedby={`${id}-hint`}>Add metric</Button>
         <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
       </div>
+      <p id={`${id}-hint`} className="text-xs text-muted-foreground">Name, numeric threshold and owner are required.</p>
     </form>
   );
 }
@@ -202,7 +237,15 @@ export function SignoffEditor({ team, label }: { team: TeamKey; label: string })
     <div className="mt-2 flex flex-col gap-2">
       <div className="flex gap-2">
         <label htmlFor={`${id}-lead`} className="sr-only">{label} lead</label>
-        <Input id={`${id}-lead`} defaultValue={s.lead} placeholder="Lead name" maxLength={80} onBlur={(e) => e.target.value !== s.lead && set({ lead: e.target.value.trim() })} />
+        <Input
+          key={`lead-${s.lead}`}
+          id={`${id}-lead`}
+          defaultValue={s.lead}
+          placeholder="Lead name"
+          maxLength={80}
+          onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+          onBlur={(e) => e.target.value.trim() !== s.lead && set({ lead: e.target.value.trim() })}
+        />
         <label htmlFor={`${id}-status`} className="sr-only">{label} status</label>
         <select id={`${id}-status`} value={s.status} onChange={(e) => set({ status: e.target.value as TeamSignoff["status"] })} className="h-8 rounded-lg border border-input bg-input/30 px-2 text-sm">
           <option value="pending">pending</option>
@@ -211,7 +254,15 @@ export function SignoffEditor({ team, label }: { team: TeamKey; label: string })
         </select>
       </div>
       <label htmlFor={`${id}-note`} className="sr-only">{label} note</label>
-      <Input id={`${id}-note`} defaultValue={s.note} placeholder="Note (optional)" maxLength={200} onBlur={(e) => e.target.value !== s.note && set({ note: e.target.value.trim() })} />
+      <Input
+        key={`note-${s.note}`}
+        id={`${id}-note`}
+        defaultValue={s.note}
+        placeholder="Note (optional) — Enter to save"
+        maxLength={200}
+        onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+        onBlur={(e) => e.target.value.trim() !== s.note && set({ note: e.target.value.trim() })}
+      />
     </div>
   );
 }
@@ -270,26 +321,38 @@ export function DecisionComposer() {
 
 export function DecisionEdit({ id, text }: { id: string; text: string }) {
   const { apply } = useEditor();
-  return <InlineText value={text} label="decision" multiline={false} maxLength={300} onSave={(t) => t && apply((d, now) => E.editDecision(d, id, t, now))} />;
+  const snippet = text.length > 40 ? `${text.slice(0, 40)}…` : text;
+  return <InlineText value={text} label={`decision "${snippet}"`} multiline={false} maxLength={300} onSave={(t) => apply((d, now) => E.editDecision(d, id, t, now))} />;
 }
 
 export function RecipientForm() {
   const { apply } = useEditor();
+  const { doc } = useEditor();
   const [r, setR] = useState<Recipient>({ name: "", role: "", email: "", group: "team-lead" });
+  const [error, setError] = useState<string | null>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
   const id = useId();
   const valid = r.name.trim() && E.isEmail(r.email.trim());
   return (
+    <>
     <form
       className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_1.3fr_auto_auto]"
+      aria-describedby={`${id}-msg`}
       onSubmit={(e) => {
         e.preventDefault();
-        if (!valid) return;
-        apply((d, now) => E.addRecipient(d, { ...r, name: r.name.trim(), role: r.role.trim(), email: r.email.trim() }, now));
+        const check = E.checkRecipient(doc, r.email);
+        if (!r.name.trim() || check !== "ok") {
+          setError(!r.name.trim() ? "Add a name." : check === "duplicate" ? "That email is already on the list." : "Enter a valid email.");
+          return;
+        }
+        apply((d, now) => E.addRecipient(d, { ...r, name: r.name.trim(), role: r.role.trim(), email: r.email }, now));
         setR({ name: "", role: "", email: "", group: r.group });
+        setError(null);
+        nameRef.current?.focus();
       }}
     >
       <label className="sr-only" htmlFor={`${id}-n`}>Name</label>
-      <Input id={`${id}-n`} value={r.name} placeholder="Name" maxLength={80} onChange={(e) => setR({ ...r, name: e.target.value })} />
+      <Input ref={nameRef} id={`${id}-n`} value={r.name} placeholder="Name" maxLength={80} onChange={(e) => setR({ ...r, name: e.target.value })} />
       <label className="sr-only" htmlFor={`${id}-r`}>Role</label>
       <Input id={`${id}-r`} value={r.role} placeholder="Role" maxLength={80} onChange={(e) => setR({ ...r, role: e.target.value })} />
       <label className="sr-only" htmlFor={`${id}-e`}>Email</label>
@@ -299,16 +362,18 @@ export function RecipientForm() {
         <option value="team-lead">Team lead</option>
         <option value="stakeholder">Stakeholder</option>
       </select>
-      <Button type="submit" size="sm" className="h-8" disabled={!valid}>Add</Button>
+      <Button type="submit" size="sm" className="h-8" aria-disabled={!valid}>Add</Button>
     </form>
+    <p id={`${id}-msg`} className="mt-1 text-xs text-warning empty:hidden" aria-live="polite">{error ?? ""}</p>
+    </>
   );
 }
 
 export function RecipientRemove({ email, name }: { email: string; name: string }) {
   const { apply } = useEditor();
   return (
-    <button type="button" className="ml-1 rounded p-0.5 text-muted-foreground hover:text-foreground" aria-label={`Remove ${name}`} onClick={() => apply((d, now) => E.removeRecipient(d, email, now))}>
-      <Trash2 className="size-3.5" />
+    <button type="button" className="-my-1 ml-1 grid size-7 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={`Remove ${name} (${email})`} onClick={() => apply((d, now) => E.removeRecipient(d, email, now))}>
+      <Trash2 className="size-3.5" aria-hidden />
     </button>
   );
 }
