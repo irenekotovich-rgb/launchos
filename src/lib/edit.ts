@@ -9,7 +9,6 @@ import type {
   Decision,
   ExpectedResults,
   Highlight,
-  Impact,
   LaunchBrief,
   ModelRun,
   LaunchDoc,
@@ -20,6 +19,7 @@ import type {
   TeamSignoff,
 } from "./types";
 import { METRIC_LIMITS } from "./types";
+import { cleanExpected } from "./money";
 import { isLaunchDoc, sanitizeLaunchDoc } from "./validate";
 
 const randomId = (prefix: string) =>
@@ -68,8 +68,9 @@ export function upsertMetric(doc: LaunchDoc, metric: Omit<Metric, "id"> & { id?:
   if (frozen(doc)) return doc;
   const id = metric.id ?? randomId(metric.kind === "success" ? "s" : "f");
   const exists = doc.alignment.metrics.some((m) => m.id === id);
-  // The framework is fixed: at most three success and two failure metrics.
-  if (!exists && doc.alignment.metrics.filter((m) => m.kind === metric.kind).length >= METRIC_LIMITS[metric.kind]) return doc;
+  // The framework is fixed: at most three success and two failure metrics — also when an edit changes a metric's kind.
+  const sameKindOthers = doc.alignment.metrics.filter((m) => m.kind === metric.kind && m.id !== id).length;
+  if (sameKindOthers >= METRIC_LIMITS[metric.kind]) return doc;
   const next: Metric = { ...metric, id };
   const metrics = exists ? doc.alignment.metrics.map((m) => (m.id === id ? next : m)) : [...doc.alignment.metrics, next];
   return touch({ ...doc, alignment: { ...doc.alignment, metrics } }, now);
@@ -257,13 +258,7 @@ export function setAnalysisDetail(
 export function setExpected(doc: LaunchDoc, patch: Partial<ExpectedResults>, now: Date): LaunchDoc {
   if (frozen(doc)) return doc;
   const prev: ExpectedResults = doc.alignment.expected ?? { userExperience: [], revenue: null, expenses: null };
-  const clean = (i: Impact | null | undefined) =>
-    i && Number.isFinite(i.amount) && i.amount >= 0 ? { ...i, currency: i.currency.trim().toUpperCase().slice(0, 3) || "USD", period: i.period.trim(), note: i.note.trim() } : null;
-  const next: ExpectedResults = {
-    userExperience: patch.userExperience ? patch.userExperience.map((l) => l.trim()).filter(Boolean).slice(0, 6) : prev.userExperience,
-    revenue: "revenue" in patch ? clean(patch.revenue) : prev.revenue,
-    expenses: "expenses" in patch ? clean(patch.expenses) : prev.expenses,
-  };
+  const next = cleanExpected({ ...prev, ...patch })!;
   if (JSON.stringify(next) === JSON.stringify(prev)) return doc;
   return touch({ ...doc, alignment: { ...doc.alignment, expected: next } }, now);
 }

@@ -216,3 +216,13 @@ describe("metric framework and expected results (owner, 2026-10-18)", () => {
     expect(E.setExpected(locked, { userExperience: ["x"] }, LATER)).toBe(locked);
   });
 });
+
+describe("kind flip can't bypass the metric framework (review PR #14)", () => {
+  it("refuses turning a success metric into a third failure metric", () => {
+    let doc = fresh();
+    doc = E.upsertMetric(doc, { id: "s1", kind: "success", name: "S", unit: "", direction: "above", threshold: 1, owner: "o" }, LATER);
+    for (const n of ["F1", "F2"]) doc = E.upsertMetric(doc, { kind: "failure", name: n, unit: "", direction: "above", threshold: 1, owner: "o" }, LATER);
+    const flipped = E.upsertMetric(doc, { id: "s1", kind: "failure", name: "S", unit: "", direction: "above", threshold: 1, owner: "o" }, LATER);
+    expect(flipped).toBe(doc);
+  });
+});
