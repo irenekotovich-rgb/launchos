@@ -71,7 +71,17 @@ function Chart({ s }: { s: MetricSeries }) {
         ))}
         {/* direct label on the latest point only */}
         {drawn.length > 0 && hover === null && (
-          <text x={x(drawn.at(-1)!.i)} y={y(drawn.at(-1)!.value) - 10} textAnchor="middle" className="fill-foreground text-[11px] font-semibold">
+          <text
+            x={x(drawn.at(-1)!.i)}
+            // Above the point, unless that would sit on the threshold line or the chart top — then below.
+            y={(() => {
+              const py = y(drawn.at(-1)!.value);
+              const above = py - 10;
+              return Math.abs(above - 4 - ty) < 10 || above < 10 ? py + 18 : above;
+            })()}
+            textAnchor="middle"
+            className="fill-foreground text-[11px] font-semibold"
+          >
             {fmtValue(drawn.at(-1)!.value, s.unit)}
           </text>
         )}
@@ -110,6 +120,7 @@ export function MetricsDashboard({ series }: { series: MetricSeries[] }) {
       </div>
       {view === "table" ? (
         <div className="overflow-x-auto">
+          <p className="mb-2 text-xs text-muted-foreground sm:hidden">Swipe sideways to see every stage.</p>
           <table className="w-full min-w-[36rem] text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
