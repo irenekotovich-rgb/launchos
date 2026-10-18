@@ -1,0 +1,54 @@
+# LaunchOS — your launch, in one URL
+
+**Made by [Iryna Kotovych](https://www.linkedin.com/in/irynakotovych/) · Product Manager / Product Marketing**
+
+LaunchOS is an open-source **launch room**: a single page that holds everything
+about a product or feature launch — the analysis, the problem & metrics
+agreement between teams, the brief, the launch tier, the timeline with gates
+and ETAs, the readiness checklist, the staged rollout (10 → 30 → 60 → 100%),
+the metrics dashboard, the full generated asset kit (release
+notes, blog, email, LinkedIn post, sales one-pager, FAQ) and the decisions log.
+One brief in → the whole kit out, and a consistency checker flags any asset
+that drifts from the brief.
+
+Why it exists: launch details always end up scattered across ten docs, decks and
+Slack threads. Stakeholders ping the PMM for status; assets quietly contradict
+each other. LaunchOS gives everyone one read-only URL instead.
+
+**Try it:** open the hosted demo (no sign-up) — or clone this repo, add your own
+API key, and run your real launches privately on your own tokens (BYO-key).
+
+## What's where and why
+
+| Path | What it is | Why it matters |
+|---|---|---|
+| `README.md` | This file — the map | First thing a visitor (or hiring manager) reads |
+| `CLAUDE.md` | Working rules for Claude Code sessions: stack, PR workflow, visual QA, honesty rules, attribution | The project is built by directing AI agents; this file is how they're directed |
+| `docs/PRD.md` | Product requirements: problem, users, jobs-to-be-done, v1 scope, key decisions, risks | Written **before** the first line of code — product thinking first |
+| `docs/positioning.md` | Dunford-style canvas + message hierarchy for LaunchOS itself | A launch tool must be sharply positioned; also an honest note on competitors |
+| `docs/launch-plan.md` | The plan for launching LaunchOS (tiers, phases, checklist, channels) | The tool plans its own launch — methodology eating its own dog food |
+| `docs/metrics.md` | North star (launch-room activation), metrics tree, first A/B experiments | Defines "working"; the README will show this funnel measured on the app itself |
+| `docs/decisions-log.md` | Dated one-liners for every judgment call made during the build | The paper trail of autonomous agent work — and the owner's pre-interview cheat sheet |
+| `kickoff-prompt.md` | The prompts that drive the build: one intake interview, then milestones M1–M4 hands-off | Reproducibility: anyone can see exactly how this was built |
+| `.claude/settings.json` | Pre-approved permissions for Claude Code | Lets agents install, commit, open and merge PRs without interrupting the owner |
+| `.env.example` | Template for API keys (Gemini, OpenRouter, PostHog) | BYO-key: copy to `.env.local`, fill in, never committed |
+| `design-reference.html` | Static prototype of the launch-room screen | Early layout prototype (countdown, timeline, readiness ring); colors superseded by the grey-metallic → lilac direction |
+| *(created in M1+)* `src/`, `prompts/`, `qa-shots/` | App code; versioned LLM prompts incl. the consistency rubric; visual QA screenshots | Prompts are product artifacts, not code internals; QA shots prove every screen was looked at |
+
+## How this was built
+With [Claude Code](https://claude.com/claude-code): the owner wrote the docs and
+the kickoff prompts, answered one intake interview, and the agents built the app
+through 10–15 small PRs — each with a reviewer-grade description, an automated
+code review, responses, and visual QA screenshots. The full story: see the PR
+history and `docs/decisions-log.md`.
+
+## Run it with your own keys (BYO-key)
+```bash
+git clone <this repo> && cd launchos
+cp .env.example .env.local   # fill in your keys
+npm install && npm run dev
+```
+Your launches, your tokens, your data — nothing leaves your deployment.
+
+## License
+MIT © 2026 Iryna Kotovych
