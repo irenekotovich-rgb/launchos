@@ -34,3 +34,6 @@
 - 2026-10-18 — When the current phase is overdue the projected launch day equals "now", so the room shows "launch day is slipping" instead of a zero countdown.
 - 2026-10-18 — Review PR #5: suggestions are not live regions (plain list in a labelled aside), keep focus on minimise/expand/dismiss, 32px controls, prune dismissed ids whose condition cleared, "show dismissed" restore pill.
 - 2026-10-18 — Review PR #5: server-rendered room state (phase states, suggestions) is computed per request and doesn't re-evaluate in an open tab; acceptable for v1, only the countdown ticks live.
+- 2026-10-18 — Metrics dashboard = small multiples, one single-series chart per agreed metric (x = rollout stage, threshold as a hairline reference), status as icon + label, table view toggle; no chart library (dataviz rules: one axis, no legend for single series, text in text tokens).
+- 2026-10-18 — A closed rollout stage's gate is judged at its completion time, not "now" — otherwise every finished stage turns "readings stale" after 48h.
+- 2026-10-18 — Stage messages: composed in-app (to: stakeholders + team leads, subject, metrics at the stage, gate verdict, next stage), sent via "Open in email" (mailto) or Copy.
