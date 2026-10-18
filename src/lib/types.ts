@@ -89,14 +89,17 @@ export interface Metric {
   kind: MetricKind;
   name: string;
   unit: string;
-  /** "above": the metric breaches/succeeds when value >= threshold; "below": value <= threshold. */
+  /**
+   * Which side of the threshold "crosses" it (inclusive): "above" = value >= threshold,
+   * "below" = value <= threshold. Crossing means success for success metrics and a breach
+   * for failure metrics.
+   */
   direction: "above" | "below";
   threshold: number;
   owner: string;
 }
 
 export interface TeamSignoff {
-  team: TeamKey;
   lead: string;
   status: "pending" | "signed" | "objected";
   note: string;
@@ -107,7 +110,8 @@ export interface Alignment {
   problem: string;
   forWhom: string;
   metrics: Metric[];
-  signoffs: TeamSignoff[];
+  /** Keyed by team so a team can't be missing or duplicated. */
+  signoffs: Record<TeamKey, TeamSignoff>;
   lockedAt: IsoDate | null;
 }
 
@@ -118,7 +122,8 @@ export type Tier = "T1" | "T2" | "T3";
 export interface TierDecision {
   tier: Tier;
   rationale: string;
-  overridden: boolean;
+  /** Decision id when the PMM overrode the suggested tier. */
+  overrideDecisionId: string | null;
 }
 
 export type PhaseKey = "analysis" | "alignment" | "brief" | "assets" | "readiness" | "rollout";
@@ -161,9 +166,11 @@ export interface MetricReading {
   recordedAt: IsoDate;
 }
 
+export type RolloutPercent = (typeof ROLLOUT_STEPS)[number]["cumulative"];
+
+/** The increment is derived from `cumulative` via ROLLOUT_STEPS, never stored. */
 export interface RolloutStage {
-  cumulative: 10 | 30 | 60 | 100;
-  increment: 10 | 20 | 30 | 40;
+  cumulative: RolloutPercent;
   status: RolloutStatus;
   plannedStart: IsoDate;
   startedAt: IsoDate | null;
@@ -183,7 +190,8 @@ export interface Recipient {
 }
 
 export interface Rollout {
-  stages: RolloutStage[];
+  /** Always four stages in ROLLOUT_STEPS order. */
+  stages: [RolloutStage, RolloutStage, RolloutStage, RolloutStage];
   recipients: Recipient[];
 }
 

@@ -67,20 +67,20 @@
       { "id": "f-rollbacks", "kind": "failure", "name": "Releases rolled back due to approval bugs", "unit": "%", "direction": "above", "threshold": 2, "owner": "Tomás Ruiz (R&D)" },
       { "id": "f-latency", "kind": "failure", "name": "p95 release calendar load time", "unit": "ms", "direction": "above", "threshold": 1500, "owner": "Tomás Ruiz (R&D)" }
     ],
-    "signoffs": [
-      { "team": "stakeholders", "lead": "Elena Varga (VP Product)", "status": "signed", "note": "Go, provided the audit export ships at GA.", "signedAt": "2026-09-22T15:00:00.000Z" },
-      { "team": "rnd", "lead": "Tomás Ruiz", "status": "signed", "note": "Latency threshold agreed after load test.", "signedAt": "2026-09-23T11:00:00.000Z" },
-      { "team": "marketing", "lead": "Sofia Lindqvist", "status": "signed", "note": "", "signedAt": "2026-09-23T14:00:00.000Z" },
-      { "team": "sales", "lead": "Daniel Okafor", "status": "signed", "note": "Upgrade target owned by Sales, reviewed weekly.", "signedAt": "2026-09-24T10:00:00.000Z" },
-      { "team": "support", "lead": "Priya Nair", "status": "signed", "note": "Ticket threshold is per 1k active workspaces, not total.", "signedAt": "2026-09-24T12:00:00.000Z" },
-      { "team": "legal", "lead": "Hannah Brooks", "status": "signed", "note": "'Audit trail' is fine; do not say 'SOC 2 compliant'.", "signedAt": "2026-09-25T09:00:00.000Z" }
-    ],
+    "signoffs": {
+      "stakeholders": { "lead": "Elena Varga (VP Product)", "status": "signed", "note": "Go, provided the audit export ships at GA.", "signedAt": "2026-09-22T15:00:00.000Z" },
+      "rnd": { "lead": "Tomás Ruiz", "status": "signed", "note": "Latency threshold agreed after load test.", "signedAt": "2026-09-23T11:00:00.000Z" },
+      "marketing": { "lead": "Sofia Lindqvist", "status": "signed", "note": "", "signedAt": "2026-09-23T14:00:00.000Z" },
+      "sales": { "lead": "Daniel Okafor", "status": "signed", "note": "Upgrade target owned by Sales, reviewed weekly.", "signedAt": "2026-09-24T10:00:00.000Z" },
+      "support": { "lead": "Priya Nair", "status": "signed", "note": "Ticket threshold is per 1k active workspaces, not total.", "signedAt": "2026-09-24T12:00:00.000Z" },
+      "legal": { "lead": "Hannah Brooks", "status": "signed", "note": "'Audit trail' is fine; do not say 'SOC 2 compliant'.", "signedAt": "2026-09-25T09:00:00.000Z" }
+    },
     "lockedAt": "2026-09-25T09:30:00.000Z"
   },
   "tier": {
     "tier": "T2",
     "rationale": "Significant feature for existing buyers with a plan-packaging impact, but no new persona, no pricing change and no new market. T2 = full asset kit, staged rollout, no paid campaign.",
-    "overridden": false
+    "overrideDecisionId": null
   },
   "phases": [
     { "key": "analysis", "name": "Analysis", "start": "2026-09-07T09:00:00.000Z", "eta": "2026-09-14T17:00:00.000Z", "completedAt": "2026-09-13T16:00:00.000Z", "gate": "Six analysis fields filled and reviewed by the PMM" },
@@ -105,7 +105,7 @@
   "rollout": {
     "stages": [
       {
-        "cumulative": 10, "increment": 10, "status": "complete",
+        "cumulative": 10, "status": "complete",
         "plannedStart": "2026-10-13T09:00:00.000Z", "startedAt": "2026-10-13T09:00:00.000Z", "completedAt": "2026-10-16T09:00:00.000Z",
         "readings": [
           { "metricId": "s-adoption", "value": 9.5, "recordedAt": "2026-10-16T08:00:00.000Z" },
@@ -118,7 +118,7 @@
         "notifiedAt": "2026-10-16T09:15:00.000Z", "overrideDecisionId": null
       },
       {
-        "cumulative": 30, "increment": 20, "status": "live",
+        "cumulative": 30, "status": "live",
         "plannedStart": "2026-10-16T09:00:00.000Z", "startedAt": "2026-10-16T09:30:00.000Z", "completedAt": null,
         "readings": [
           { "metricId": "s-adoption", "value": 13.2, "recordedAt": "2026-10-18T08:00:00.000Z" },
@@ -131,12 +131,12 @@
         "notifiedAt": null, "overrideDecisionId": null
       },
       {
-        "cumulative": 60, "increment": 30, "status": "not-started",
+        "cumulative": 60, "status": "not-started",
         "plannedStart": "2026-10-21T09:00:00.000Z", "startedAt": null, "completedAt": null,
         "readings": [], "notifiedAt": null, "overrideDecisionId": null
       },
       {
-        "cumulative": 100, "increment": 40, "status": "not-started",
+        "cumulative": 100, "status": "not-started",
         "plannedStart": "2026-10-27T09:00:00.000Z", "startedAt": null, "completedAt": null,
         "readings": [], "notifiedAt": null, "overrideDecisionId": null
       }
