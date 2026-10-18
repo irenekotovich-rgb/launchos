@@ -23,7 +23,7 @@ export default async function DemoPage({ searchParams }: { searchParams: Promise
     <>
       <SiteHeader />
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pb-28 pt-2">
-        <LaunchRoom doc={getDemoLaunch(real)} now={now} />
+        <LaunchRoom doc={getDemoLaunch(real)} now={now} liveClock={now === real} />
       </main>
     </>
   );

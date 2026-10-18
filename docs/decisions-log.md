@@ -31,3 +31,6 @@
 - 2026-10-18 — Review PR #4: kept the `/demo` header link although it 404s until the launch-room PR, which is next in the queue.
 - 2026-10-18 — Suggestions UX: max 2 compact popups on desktop with "N more"; phones start minimised to a "N suggestions" pill so the room stays readable. Dismissals persist per launch in localStorage (convenience only).
 - 2026-10-18 — Demo `?now=` override (evaluate the demo at another moment) only works in dev or with LAUNCHOS_QA=1 — used for visual QA of overdue/stale states, never on the hosted demo.
+- 2026-10-18 — When the current phase is overdue the projected launch day equals "now", so the room shows "launch day is slipping" instead of a zero countdown.
+- 2026-10-18 — Review PR #5: suggestions are not live regions (plain list in a labelled aside), keep focus on minimise/expand/dismiss, 32px controls, prune dismissed ids whose condition cleared, "show dismissed" restore pill.
+- 2026-10-18 — Review PR #5: server-rendered room state (phase states, suggestions) is computed per request and doesn't re-evaluate in an open tab; acceptable for v1, only the countdown ticks live.

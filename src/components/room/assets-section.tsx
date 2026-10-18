@@ -17,6 +17,12 @@ function AssetCard({ asset, findings }: { asset: Asset; findings: ConsistencyFin
         <Pill tone={s.tone}>{s.label}</Pill>
       </div>
       <p className="whitespace-pre-line break-words text-sm text-muted-foreground line-clamp-6">{asset.content}</p>
+      {asset.content.length > 280 && (
+        <details className="text-sm">
+          <summary className="cursor-pointer font-semibold text-primary">Read the full draft</summary>
+          <p className="mt-2 whitespace-pre-line break-words text-muted-foreground">{asset.content}</p>
+        </details>
+      )}
       <p className="text-xs font-medium text-warning">Draft — review before publishing</p>
       {findings.length > 0 && (
         <div className="flex flex-col gap-2 border-t border-border pt-3">

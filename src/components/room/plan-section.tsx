@@ -7,7 +7,7 @@ export function PlanSection({ doc }: { doc: LaunchDoc }) {
   const total = doc.checklist.length;
   const pct = total ? Math.round((done / total) * 100) : 0;
   return (
-    <Section id="plan" title="Readiness checklist" kicker={`${done} of ${total} done · ${pct}%`}>
+    <Section id="plan" title="Readiness checklist" kicker={total ? `${done} of ${total} done · ${pct}%` : "Not derived yet"}>
       {total === 0 ? (
         <EmptyState>No checklist items. They are derived from the tier when the launch is created.</EmptyState>
       ) : (

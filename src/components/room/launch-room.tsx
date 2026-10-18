@@ -32,7 +32,7 @@ export function DemoBanner() {
 }
 
 /** The launch room: renders a LaunchDoc as of `now`. Pure render; interactivity lives in child client components. */
-export function LaunchRoom({ doc, now }: { doc: LaunchDoc; now: Date }) {
+export function LaunchRoom({ doc, now, liveClock = true }: { doc: LaunchDoc; now: Date; liveClock?: boolean }) {
   return (
     <div className="flex flex-col gap-6">
       {doc.meta.mode === "demo" && <DemoBanner />}
@@ -47,7 +47,7 @@ export function LaunchRoom({ doc, now }: { doc: LaunchDoc; now: Date }) {
           ))}
         </ul>
       </nav>
-      <Overview doc={doc} now={now} />
+      <Overview doc={doc} now={now} liveClock={liveClock} />
       <AnalysisSection doc={doc} />
       <AlignmentSection doc={doc} />
       <PlanSection doc={doc} />

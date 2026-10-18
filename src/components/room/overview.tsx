@@ -21,12 +21,13 @@ const STATE_DOT: Record<PhaseState, string> = {
   overdue: "bg-brand-orange border-brand-orange ring-4 ring-brand-orange/25",
 };
 
-export function Overview({ doc, now }: { doc: LaunchDoc; now: Date }) {
+export function Overview({ doc, now, liveClock = true }: { doc: LaunchDoc; now: Date; liveClock?: boolean }) {
   const current = currentPhase(doc);
   const projected = projectedEndDate(doc, now);
   const slipped = projected.getTime() > Date.parse(doc.brief.targetDate);
   const percent = rolledOutPercent(doc);
   const full = isFullyRolledOut(doc);
+  const progress = progressPercent(doc);
 
   return (
     <section id="overview" aria-labelledby="overview-title" className="flex flex-col gap-4">
@@ -56,8 +57,14 @@ export function Overview({ doc, now }: { doc: LaunchDoc; now: Date }) {
               )}
             </p>
           </div>
-          <Countdown target={projected.toISOString()} initialNow={now.toISOString()} />
-          <p className="text-xs text-muted-foreground">Launch day = 100% rollout. Projection moves if the current phase runs past its ETA.</p>
+          {current && phaseState(current, current, now) === "overdue" ? (
+            <p role="status" className="text-xl font-bold text-brand-orange">
+              Launch day is slipping: {current.name} is past its ETA, so every open day moves launch by a day.
+            </p>
+          ) : (
+            <Countdown target={projected.toISOString()} initialNow={now.toISOString()} live={liveClock} />
+          )}
+          <p className="text-xs text-muted-foreground">Launch day = 100% rollout. Projection moves if the current phase runs past its ETA. Dates in UTC.</p>
         </div>
 
         <div className="surface flex flex-col gap-4 rounded-2xl p-5 sm:p-6">
@@ -68,10 +75,10 @@ export function Overview({ doc, now }: { doc: LaunchDoc; now: Date }) {
               <p className="truncate text-xl font-bold">{current ? current.name : "All phases complete"}</p>
               {current && <p className="text-sm text-muted-foreground">ETA {fmtDayYear(current.eta)}</p>}
             </div>
-            <p className="font-mono text-3xl font-bold text-primary">{progressPercent(doc)}%</p>
+            <p className="font-mono text-3xl font-bold text-primary">{progress}%</p>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
-            <div className="h-full rounded-full bg-gradient-to-r from-primary to-brand-orange" style={{ width: `${progressPercent(doc)}%` }} />
+            <div className="h-full rounded-full bg-gradient-to-r from-primary to-brand-orange" style={{ width: `${progress}%` }} />
           </div>
           <p className="text-xs text-muted-foreground">Share of the six phases closed.</p>
         </div>
