@@ -1,5 +1,15 @@
+import { AssetActions, RegenerateAsset } from "./editors";
 import { EmptyState, Pill, Section } from "./section";
-import type { Asset, AssetStatus, ConsistencyFinding, LaunchDoc } from "@/lib/types";
+import type { Asset, AssetStatus, AssetType, ConsistencyFinding, LaunchDoc } from "@/lib/types";
+
+const ASSET_LABEL: Record<AssetType, string> = {
+  "release-notes": "release notes",
+  "blog-post": "blog post",
+  "announcement-email": "announcement email",
+  "linkedin-post": "LinkedIn post",
+  "sales-one-pager": "sales one-pager",
+  faq: "FAQ",
+};
 
 const STATUS: Record<AssetStatus, { label: string; tone: "good" | "warn" | "bad" | "info" }> = {
   ok: { label: "On brief", tone: "good" },
@@ -8,7 +18,7 @@ const STATUS: Record<AssetStatus, { label: string; tone: "good" | "warn" | "bad"
   generating: { label: "Generating…", tone: "warn" },
 };
 
-function AssetCard({ asset, findings }: { asset: Asset; findings: ConsistencyFinding[] }) {
+function AssetCard({ asset, findings, editable }: { asset: Asset; findings: ConsistencyFinding[]; editable: boolean }) {
   const s = STATUS[asset.status];
   return (
     <article className="flex flex-col gap-3 rounded-xl border border-border bg-background/30 p-4">
@@ -27,6 +37,7 @@ function AssetCard({ asset, findings }: { asset: Asset; findings: ConsistencyFin
         Draft — review before publishing
         {asset.modelId && <span className="font-normal text-muted-foreground"> · {asset.modelId}</span>}
       </p>
+      {editable && (asset.status === "stale" || asset.status === "draft") && <RegenerateAsset type={asset.type} title={asset.title} />}
       {findings.length > 0 && (
         <div className="flex flex-col gap-2 border-t border-border pt-3">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -49,7 +60,10 @@ function AssetCard({ asset, findings }: { asset: Asset; findings: ConsistencyFin
   );
 }
 
-export function AssetsSection({ doc }: { doc: LaunchDoc }) {
+export function AssetsSection({ doc, editable = false }: { doc: LaunchDoc; editable?: boolean }) {
+  const missing = (Object.keys(ASSET_LABEL) as AssetType[])
+    .filter((t) => !doc.assets.some((a) => a.type === t))
+    .map((type) => ({ type, label: ASSET_LABEL[type] }));
   const stale = doc.assets.filter((a) => a.status === "stale").length;
   return (
     <Section
@@ -57,6 +71,7 @@ export function AssetsSection({ doc }: { doc: LaunchDoc }) {
       title="Asset kit"
       kicker={doc.assets.length ? `${doc.assets.length} assets · ${stale} drifted` : "Not generated yet"}
     >
+      {editable && <AssetActions missing={missing} />}
       {doc.assets.length === 0 ? (
         <EmptyState>
           The kit (release notes, blog post, announcement email, LinkedIn post, sales one-pager, FAQ) is generated from the
@@ -65,7 +80,7 @@ export function AssetsSection({ doc }: { doc: LaunchDoc }) {
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {doc.assets.map((a) => (
-            <AssetCard key={a.id} asset={a} findings={doc.findings.filter((f) => f.assetId === a.id)} />
+            <AssetCard key={a.id} asset={a} editable={editable} findings={doc.findings.filter((f) => f.assetId === a.id)} />
           ))}
         </div>
       )}

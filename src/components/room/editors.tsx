@@ -4,16 +4,17 @@
 // LaunchEditor context; the owner component persists the result. The demo never renders these.
 
 import { createContext, useContext, useEffect, useId, useRef, useState } from "react";
-import { Check, Circle, Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, Circle, Loader2, Pencil, Plus, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
+import { regenerateAsset, runConsistencyCheck } from "@/lib/ai-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import * as E from "@/lib/edit";
-import type { AnalysisKey, LaunchDoc, Metric, PhaseKey, Recipient, TeamKey, TeamSignoff } from "@/lib/types";
+import type { AnalysisKey, AssetType, LaunchBrief, LaunchDoc, Metric, PhaseKey, Recipient, TeamKey, TeamSignoff } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Apply = (edit: (doc: LaunchDoc, now: Date) => LaunchDoc) => void;
-const Ctx = createContext<{ doc: LaunchDoc; apply: Apply } | null>(null);
+const Ctx = createContext<{ doc: LaunchDoc; apply: Apply; replace: (d: LaunchDoc) => void } | null>(null);
 
 export function LaunchEditor({ doc, onChange, children }: { doc: LaunchDoc; onChange: (d: LaunchDoc) => void; children: React.ReactNode }) {
   // Edits chain off the latest doc, so two edits in one tick (e.g. blur + click) don't drop one.
@@ -25,7 +26,11 @@ export function LaunchEditor({ doc, onChange, children }: { doc: LaunchDoc; onCh
     latest.current = next;
     onChange(next);
   };
-  return <Ctx.Provider value={{ doc, apply }}>{children}</Ctx.Provider>;
+  const replace = (next: LaunchDoc) => {
+    latest.current = next;
+    onChange(next);
+  };
+  return <Ctx.Provider value={{ doc, apply, replace }}>{children}</Ctx.Provider>;
 }
 
 function useEditor() {
@@ -375,5 +380,103 @@ export function RecipientRemove({ email, name }: { email: string; name: string }
     <button type="button" className="-my-1 ml-1 grid size-7 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={`Remove ${name} (${email})`} onClick={() => apply((d, now) => E.removeRecipient(d, email, now))}>
       <Trash2 className="size-3.5" aria-hidden />
     </button>
+  );
+}
+
+const BRIEF_TEXT: Record<"what" | "who" | "whyNow", { label: string; max: number }> = {
+  what: { label: "what ships", max: 400 },
+  who: { label: "who it's for", max: 300 },
+  whyNow: { label: "why now", max: 400 },
+};
+
+export function BriefTextEditor({ field }: { field: keyof typeof BRIEF_TEXT }) {
+  const { doc, apply } = useEditor();
+  const meta = BRIEF_TEXT[field];
+  return (
+    <InlineText
+      value={doc.brief[field]}
+      label={meta.label}
+      maxLength={meta.max}
+      onSave={(t) => t && apply((d, now) => E.editBrief(d, { [field]: t } as Partial<LaunchBrief>, now))}
+    />
+  );
+}
+
+export function ClaimsEditor() {
+  const { doc, apply } = useEditor();
+  return (
+    <InlineText
+      value={doc.brief.claims.join("\n")}
+      label="claims, one per line"
+      maxLength={8 * 300}
+      onSave={(t) => {
+        const claims = t.split("\n").map((c) => c.trim()).filter(Boolean).slice(0, 8);
+        if (claims.length) apply((d, now) => E.editBrief(d, { claims }, now));
+      }}
+    />
+  );
+}
+
+/** Toolbar over the asset kit: run the rubric, generate what's missing. */
+export function AssetActions({ missing }: { missing: { type: AssetType; label: string }[] }) {
+  const { doc, replace } = useEditor();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const run = async (key: string, task: () => Promise<{ ok: true; doc: LaunchDoc } | { ok: false; message: string }>) => {
+    setBusy(key);
+    setMessage(null);
+    const res = await task();
+    setBusy(null);
+    if (res.ok) replace(res.doc);
+    else setMessage(res.message);
+  };
+  const hasAssets = doc.assets.some((a) => a.content);
+  return (
+    <div className="mb-4 flex flex-col gap-2">
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" disabled={!hasAssets || busy !== null} onClick={() => run("check", () => runConsistencyCheck(doc))}>
+          {busy === "check" ? <Loader2 className="animate-spin" /> : <ShieldCheck />} Run consistency check
+        </Button>
+        {missing.map((m) => (
+          <Button key={m.type} size="sm" variant="outline" disabled={busy !== null} onClick={() => run(m.type, () => regenerateAsset(doc, m.type))}>
+            {busy === m.type ? <Loader2 className="animate-spin" /> : <Plus />} Generate {m.label}
+          </Button>
+        ))}
+      </div>
+      <p className="text-xs text-muted-foreground" aria-live="polite">
+        {busy === "check"
+          ? "Checking every asset against the brief on the fixed rubric…"
+          : busy
+            ? "Generating from the brief and messaging block…"
+            : message ?? "The check compares claims, numbers, feature names and tone with the brief. Same rubric every run."}
+      </p>
+    </div>
+  );
+}
+
+export function RegenerateAsset({ type, title }: { type: AssetType; title: string }) {
+  const { doc, replace } = useEditor();
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  return (
+    <div className="flex flex-col gap-1">
+      <button
+        type="button"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          setMessage(null);
+          const res = await regenerateAsset(doc, type);
+          setBusy(false);
+          if (res.ok) replace(res.doc);
+          else setMessage(res.message);
+        }}
+        className="inline-flex items-center gap-1 self-start text-xs font-semibold text-primary hover:underline disabled:opacity-60"
+        aria-label={`Regenerate ${title}`}
+      >
+        {busy ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />} {busy ? "Regenerating…" : "Regenerate from brief"}
+      </button>
+      {message && <p className="text-xs text-warning" role="status">{message}</p>}
+    </div>
   );
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AlignmentSection } from "./alignment-section";
 import { AnalysisSection } from "./analysis-section";
 import { AssetsSection } from "./assets-section";
+import { BriefSection } from "./brief-section";
 import { DecisionsSection } from "./decisions-section";
 import { Overview } from "./overview";
 import { MetricsSection } from "./metrics-section";
@@ -13,6 +14,7 @@ import type { LaunchDoc } from "@/lib/types";
 
 const NAV = [
   ["overview", "Overview"],
+  ["brief", "Brief"],
   ["analysis", "Analysis"],
   ["alignment", "Alignment"],
   ["plan", "Checklist"],
@@ -82,12 +84,13 @@ export function LaunchRoom({ doc, now, liveClock = true, editable = false }: { d
         </ul>
       </nav>
       <Overview doc={doc} now={now} liveClock={liveClock} />
+      <BriefSection doc={doc} editable={editable} />
       <AnalysisSection doc={doc} editable={editable} />
       <AlignmentSection doc={doc} editable={editable} />
       <PlanSection doc={doc} editable={editable} />
       <RolloutSection doc={doc} now={now} editable={editable} />
       <MetricsSection doc={doc} />
-      <AssetsSection doc={doc} />
+      <AssetsSection doc={doc} editable={editable} />
       <DecisionsSection doc={doc} editable={editable} />
       <Suggestions items={bottlenecks(doc, now)} storageKey={`launchos:dismissed:${doc.meta.id}`} />
     </div>
