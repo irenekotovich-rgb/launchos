@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { derivePhases, deriveRollout, RUNWAY_DAYS, runwayWarning, suggestTier } from "./plan";
-import { runGeneration } from "./pipeline";
+import { buildPlanDoc, runGeneration } from "./pipeline";
 import type { LaunchBrief } from "./types";
 
 const DAY = 86_400_000;
@@ -39,8 +39,8 @@ describe("plan derivation", () => {
     expect(rollout.stages[3].plannedStart).toBe(target);
   });
 
-  it("runGeneration returns an own, empty-but-planned LaunchDoc", async () => {
-    const doc = await runGeneration(brief(30), NOW);
+  it("buildPlanDoc returns an own, empty-but-planned LaunchDoc", () => {
+    const doc = buildPlanDoc(brief(30), NOW);
     expect(doc.meta.mode).toBe("own");
     expect(doc.meta.author.name).toBe("Iryna Kotovych");
     expect(Object.keys(doc.alignment.signoffs)).toHaveLength(6);

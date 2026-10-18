@@ -1,11 +1,15 @@
 // runGeneration: brief in → LaunchDoc out. This is the interface the UI depends on.
-// M1 builds the plan deterministically and leaves analysis, alignment and assets empty;
-// M2 fills the tier rationale, analysis drafts and the six assets with model calls.
+// 1. buildPlanDoc: deterministic plan (tier heuristic, phases, checklist, rollout) — always works.
+// 2. POST /api/generate: model-written tier, messaging, analysis drafts and six assets.
+// 3. mergeGenerated: the AI tier replaces the heuristic and the plan is re-derived from it.
+// If step 2 fails for any reason, the doc keeps the plan and records why (graceful state).
 
 import { AUTHOR } from "./author";
 import { deriveChecklist, derivePhases, deriveRollout, suggestTier } from "./plan";
 import { LAUNCH_DOC_SCHEMA_VERSION } from "./types";
-import type { AnalysisField, AnalysisKey, LaunchBrief, LaunchDoc, TeamKey, TeamSignoff } from "./types";
+import type { AnalysisField, AnalysisKey, Asset, LaunchBrief, LaunchDoc, TeamKey, TeamSignoff } from "./types";
+import type { GeneratedContent } from "./ai/generate";
+import type { GenerateResponse } from "@/app/api/generate/route";
 
 const ANALYSIS_KEYS: AnalysisKey[] = ["context", "environment", "competitors", "economics", "capacity", "audience"];
 const TEAMS: TeamKey[] = ["stakeholders", "rnd", "marketing", "sales", "support", "legal"];
@@ -20,7 +24,7 @@ function newId(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export async function runGeneration(brief: LaunchBrief, now: Date = new Date()): Promise<LaunchDoc> {
+export function buildPlanDoc(brief: LaunchBrief, now: Date = new Date()): LaunchDoc {
   if (!(Date.parse(brief.targetDate) > now.getTime())) throw new RangeError("Launch day must be in the future.");
   const tier = suggestTier(brief, now);
   const phases = derivePhases(tier.tier, brief.targetDate, now);
@@ -64,5 +68,83 @@ export async function runGeneration(brief: LaunchBrief, now: Date = new Date()):
         author: "LaunchOS",
       },
     ],
+  };
+}
+
+export function mergeGenerated(doc: LaunchDoc, content: GeneratedContent, now: Date = new Date()): LaunchDoc {
+  const stamp = now.toISOString();
+  const tier = content.tier.tier;
+  const phases = derivePhases(tier, doc.brief.targetDate, now);
+  const analysisFields = { ...doc.analysis.fields };
+  if (content.analysis) {
+    for (const k of ANALYSIS_KEYS) {
+      const text = content.analysis[k]?.trim();
+      if (text) analysisFields[k] = { text, source: "ai-draft", updatedAt: stamp };
+    }
+  }
+  const assets: Asset[] = content.assets.map((a) => ({
+    id: `a-${a.type}`,
+    type: a.type,
+    title: a.title,
+    status: "draft",
+    content: a.content,
+    generatedAt: stamp,
+    modelId: a.modelId,
+  }));
+  const missing = content.failedAssets.length;
+  return {
+    ...doc,
+    meta: {
+      ...doc.meta,
+      updatedAt: stamp,
+      models: [...doc.meta.models, ...content.models],
+      generation: {
+        status: "live",
+        note: missing
+          ? `${assets.length} of 6 assets generated; ${missing} failed on every model and can be regenerated later.`
+          : "Tier, messaging, analysis drafts and six assets generated from the brief.",
+      },
+    },
+    tier: { tier, rationale: content.tier.rationale, overrideDecisionId: null },
+    messaging: content.messaging,
+    phases,
+    checklist: deriveChecklist(tier),
+    rollout: deriveRollout(phases),
+    analysis: { ...doc.analysis, fields: analysisFields },
+    assets,
+    decisions: [
+      ...doc.decisions,
+      { id: `d${doc.decisions.length + 1}`, date: stamp, text: `AI suggested tier ${tier}; plan re-derived from it.`, author: "LaunchOS" },
+    ],
+  };
+}
+
+export async function runGeneration(
+  brief: LaunchBrief,
+  now: Date = new Date(),
+  fetcher: typeof fetch = fetch,
+): Promise<LaunchDoc> {
+  const doc = buildPlanDoc(brief, now);
+  let res: GenerateResponse;
+  try {
+    const r = await fetcher("/api/generate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(brief),
+    });
+    res = (await r.json()) as GenerateResponse;
+  } catch {
+    res = { status: "unavailable", message: "Couldn't reach the generator. Your plan was built without AI — try again later." };
+  }
+  if (res.status === "ok") return mergeGenerated(doc, res.content, now);
+  return {
+    ...doc,
+    meta: {
+      ...doc.meta,
+      generation: {
+        status: res.status === "budget-exhausted" ? "budget-exhausted" : "unavailable",
+        note: res.message,
+      },
+    },
   };
 }

@@ -35,11 +35,41 @@ export function DemoBanner() {
   );
 }
 
+function GenerationNote({ doc }: { doc: LaunchDoc }) {
+  const g = doc.meta.generation;
+  if (!g) return null;
+  const live = g.status === "live";
+  const models = [...new Set(doc.meta.models.map((m) => m.modelId))];
+  return (
+    <div
+      role="note"
+      className={
+        live
+          ? "rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm"
+          : "rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm"
+      }
+    >
+      <p>
+        <span className={live ? "font-semibold text-primary" : "font-semibold text-warning"}>
+          {live ? "Generated with AI." : g.status === "budget-exhausted" ? "Daily generation budget used." : "Generation unavailable."}
+        </span>{" "}
+        {g.note}
+      </p>
+      {live && models.length > 0 && (
+        <p className="mt-1 text-xs text-muted-foreground">
+          Models: {models.join(", ")} · {doc.meta.models[0] && new Date(doc.meta.models[0].ranAt).toISOString().slice(0, 10)} · every output is a draft — review before publishing.
+        </p>
+      )}
+    </div>
+  );
+}
+
 /** The launch room: renders a LaunchDoc as of `now`. Pure render; interactivity lives in child client components. */
 export function LaunchRoom({ doc, now, liveClock = true }: { doc: LaunchDoc; now: Date; liveClock?: boolean }) {
   return (
     <div className="flex flex-col gap-6">
       {doc.meta.mode === "demo" && <DemoBanner />}
+      <GenerationNote doc={doc} />
       <nav aria-label="Launch room sections" className="-mx-4 overflow-x-auto px-4">
         <ul className="flex w-max gap-2">
           {NAV.map(([id, label]) => (
