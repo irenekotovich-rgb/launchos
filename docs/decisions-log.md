@@ -47,3 +47,8 @@
 - 2026-10-18 — Daily budget: 25 live runs per UTC day by default (LAUNCHOS_DAILY_LIVE_RUNS, 0 = unlimited for forks), counter in the private Blob store, in-memory without a token. Fails open on storage errors: all configured models are free-tier, so the worst case is rate-limiting, not cost.
 - 2026-10-18 — Visual QA never calls models: Playwright stubs /api/generate with the "unavailable" state; one explicit live run (`scripts/qa-live-generate.mjs`) verifies the real chain.
 - 2026-10-18 — Model output normalised (some models double-escape newlines inside JSON strings).
+- 2026-10-18 — Review PR #7: budget guard now fails CLOSED when a Blob token is configured but the counter can't be read/written (replaces the earlier fail-open call); per-client hourly throttle (default 3, keyed by forwarded IP, per warm instance) covers the counter's read-modify-write race; runs with no output are refunded; no reservation when no model keys exist.
+- 2026-10-18 — Review PR #7: request-level deadline (105s under maxDuration 120) — later fallbacks are skipped instead of letting the platform kill the function.
+- 2026-10-18 — Review PR #7: /api/generate stays unauthenticated (public demo, no accounts); guards are body size cap (16KB), schema incl. future launch day, throttle and daily cap.
+- 2026-10-18 — Review PR #7: prompts v2 — brief fenced as data (live run: injected "invent an Acme quote" ignored); analysis writes "Needs your input:" for competitors/economics/capacity instead of guessing; assets use `[needs input: …]` markers rather than inventing material.
+- 2026-10-18 — Review PR #7: normalizeText also rewrites a legitimate literal "\n" in model text — accepted for marketing copy.
