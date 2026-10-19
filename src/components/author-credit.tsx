@@ -15,6 +15,8 @@ export function AuthorCredit() {
       >
         {AUTHOR.name}
       </a>
+      <span aria-hidden> · </span>
+      <a href="/how" className="underline-offset-4 hover:text-foreground hover:underline">How I built this</a>
     </footer>
   );
 }

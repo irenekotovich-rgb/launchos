@@ -2,22 +2,64 @@
 
 **Made by [Iryna Kotovych](https://www.linkedin.com/in/irynakotovych/) · Product Manager / Product Marketing**
 
-LaunchOS is an open-source **launch room**: a single page that holds everything
-about a product or feature launch — the analysis, the problem & metrics
-agreement between teams, the brief, the launch tier, the timeline with gates
-and ETAs, the readiness checklist, the staged rollout (10 → 30 → 60 → 100%),
-the metrics dashboard, the full generated asset kit (release notes, blog,
-email, LinkedIn post, sales one-pager, FAQ, sales deck + demo script, campaign
-integration plan) and the decisions log.
-One brief in → the whole kit out, and a consistency checker flags any asset
-that drifts from the brief.
+**Live demo: [launchos-five.vercel.app/demo](https://launchos-five.vercel.app/demo)** · no sign-up · [How I built this](https://launchos-five.vercel.app/how)
 
-Why it exists: launch details always end up scattered across ten docs, decks and
-Slack threads. Stakeholders ping the PMM for status; assets quietly contradict
-each other. LaunchOS gives everyone one read-only URL instead.
+![LaunchOS demo: the launch room for a fictional product](docs/media/demo.gif)
 
-**Try it:** open the hosted demo (no sign-up) — or clone this repo, add your own
-API key, and run your real launches privately on your own tokens (BYO-key).
+LaunchOS is an open-source **launch room**: one page that holds everything about a product or
+feature launch, and keeps it consistent.
+
+- **Analysis** — six areas (context, environment, competitors, economics, capacity, audience), each
+  as three key facts with a detail page. AI drafts say "Needs input" instead of inventing numbers.
+- **Alignment** — one problem, expected results for the user, company impact (revenue vs. expenses),
+  exactly 3 success + 2 failure metrics, sign-off from six teams.
+- **Plan** — tier with rationale, phases with ETAs, a live countdown to launch day, readiness
+  checklist, and small "suggestion" popups for likely bottlenecks.
+- **Staged rollout** — 10% → 30% → 60% → 100%, each stage gated on the failure metrics, with a
+  stage-complete message for stakeholders and team leads, and a 100% flag.
+- **Metrics dashboard** — the agreed metrics per stage against their thresholds (manual or CSV).
+- **Asset kit** — eight drafts from one brief: release notes, blog, email, LinkedIn, sales one-pager,
+  FAQ, sales deck + demo script, campaign integration plan.
+- **Drift control** — a fixed-rubric consistency check flags assets that contradict the brief; editing
+  the brief marks every asset stale.
+- **Share** — read-only links (redacted, unguessable, deletable, 90-day expiry) and JSON export/import.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  B[Brief form] -->|runGeneration| P[Deterministic plan<br/>tier · phases · rollout]
+  B -->|POST /api/generate| G{Model chain}
+  G --> M1[Gemini flash → flash-lite → 3.1-lite]
+  M1 -.quota / error / timeout.-> M2[OpenRouter free models]
+  M2 -.all failed.-> U[Graceful: generation unavailable]
+  G -->|tier · messaging · analysis · 8 assets| D[(LaunchDoc JSON<br/>in localStorage)]
+  P --> D
+  D --> R[Launch room]
+  R -->|/api/consistency · /api/asset| G
+  G --> C[Fixed rubric check · regenerated assets]
+  R -->|/api/share| S[(Private Vercel Blob<br/>redacted snapshot)]
+  S --> V[Read-only share page]
+```
+
+- **One launch = one portable `LaunchDoc`** (no database). Own launches live in the browser;
+  share links store a redacted snapshot in private Vercel Blob.
+- **Prompts are versioned files** in `prompts/`; every model output records model id + prompt version.
+- **Guards**: per-client throttle, daily budget (Blob counter, fails closed), request deadline under
+  `maxDuration`, typed JSON on every failure — never an error screen.
+- **Stack**: Next.js 15 (App Router) · TypeScript · Tailwind 4 · shadcn/ui · Vercel AI SDK ·
+  Vercel Blob · PostHog · Vitest · Playwright.
+
+## Run it with your own keys (BYO-key)
+```bash
+git clone https://github.com/irenekotovich-rgb/launchos.git && cd launchos
+cp .env.example .env.local   # every value is optional — see "Environment variables" below
+npm ci
+npm run dev                  # http://localhost:3000
+```
+Without any keys the app runs fully (demo, plan, editing, export) and shows a graceful
+"generation unavailable" state; add `GOOGLE_GENERATIVE_AI_API_KEY` (free in Google AI Studio) for
+live generation. Your launches, your tokens, your data — launches stay in your browser.
 
 ## What's where and why
 
@@ -28,27 +70,37 @@ API key, and run your real launches privately on your own tokens (BYO-key).
 | `docs/PRD.md` | Product requirements: problem, users, jobs-to-be-done, v1 scope, key decisions, risks | Written **before** the first line of code — product thinking first |
 | `docs/positioning.md` | Dunford-style canvas + message hierarchy for LaunchOS itself | A launch tool must be sharply positioned; also an honest note on competitors |
 | `docs/launch-plan.md` | The plan for launching LaunchOS (tiers, phases, checklist, channels) | The tool plans its own launch — methodology eating its own dog food |
-| `docs/metrics.md` | North star (launch-room activation), metrics tree, first A/B experiments | Defines "working"; the README will show this funnel measured on the app itself |
+| `docs/metrics.md` | North star (launch-room activation), metrics tree, first A/B experiments | Defines "working"; events are wired to PostHog with exactly these names |
 | `docs/decisions-log.md` | Dated one-liners for every judgment call made during the build | The paper trail of autonomous agent work — and the owner's pre-interview cheat sheet |
 | `kickoff-prompt.md` | The prompts that drive the build: one intake interview, then milestones M1–M4 hands-off | Reproducibility: anyone can see exactly how this was built |
 | `.claude/settings.json` | Pre-approved permissions for Claude Code | Lets agents install, commit, open and merge PRs without interrupting the owner |
-| `.env.example` | Template for API keys (Gemini, OpenRouter, PostHog) | BYO-key: copy to `.env.local`, fill in, never committed |
-| *(created in M1+)* `src/`, `prompts/`, `qa-shots/` | App code; versioned LLM prompts incl. the consistency rubric; visual QA screenshots | Prompts are product artifacts, not code internals; QA shots prove every screen was looked at |
+| `.env.example` | Every environment variable, all optional | BYO-key: copy to `.env.local`, fill in, never committed |
+| `src/`, `prompts/`, `data/` | App code; versioned LLM prompts incl. the consistency rubric; the fictional demo launch | Prompts are product artifacts, not code internals |
+| `scripts/`, `qa-shots/` | Playwright QA scripts; screenshots at 390 / 768 / 1440 | Proof every screen was looked at |
 
 ## How this was built
-With [Claude Code](https://claude.com/claude-code): the owner wrote the docs and
-the kickoff prompts, answered one intake interview, and the agents built the app
-through 10–15 small PRs — each with a reviewer-grade description, an automated
-code review, responses, and visual QA screenshots. The full story: see the PR
-history and `docs/decisions-log.md`.
+With [Claude Code](https://claude.com/claude-code). I wrote the docs and the kickoff prompts and
+made the product calls; AI agents built the app through small pull requests — each with a
+reviewer-grade description, an automated `@claude` review, a reply to every comment, and visual QA
+screenshots. Read the [merged PRs](https://github.com/irenekotovich-rgb/launchos/pulls?q=is%3Apr+is%3Amerged),
+the [decisions log](docs/decisions-log.md) and [How I built this](https://launchos-five.vercel.app/how).
 
-## Run it with your own keys (BYO-key)
-```bash
-git clone <this repo> && cd launchos
-cp .env.example .env.local   # fill in your keys — see "Environment variables" below
-npm install && npm run dev
-```
-Your launches, your tokens, your data — nothing leaves your deployment.
+## Key decisions
+- **BYO-key over accounts** — the hosted app is a showcase with capped live runs; real use is a fork
+  on your own keys. No customer data is stored.
+- **One portable JSON per launch** — no database in v1; export/import and redacted share snapshots.
+- **Honesty as a feature** — demo labelled everywhere, every AI output a draft with its model id,
+  analysis facts the brief can't support shown as "Needs input" (enforced in code).
+- **Staged rollout gated on failure metrics** — success metrics are tracked toward launch day; a
+  failing gate can only be overridden with a logged reason.
+- More in [docs/decisions-log.md](docs/decisions-log.md) — one dated line per judgment call.
+
+## Limitations
+- Launches live in one browser (no sync); multi-tab editing is last-writer-wins.
+- Stage messages open in your mail app — LaunchOS doesn't send or track email.
+- Metric readings are manual or CSV; no live analytics connectors yet.
+- Free model tiers rate-limit; a partial kit can ship and the room says which assets failed.
+- English only.
 
 ## Environment variables
 All optional — without model keys the app still works and shows a graceful "generation unavailable" state.
@@ -81,6 +133,8 @@ npm run qa:long-inputs            # 60-char name, 300-char claim; generation stu
 npm run qa:edit-flow | qa:rollout-flow | qa:share-flow | qa:sections | qa:viewport
 npm run qa:consistency            # QA_STUB_CONSISTENCY=1 to use a fixture
 npm run qa:live-generate          # one LIVE generation (uses your keys and budget)
+npm run qa:analytics              # analytics events fire (PostHog requests intercepted, nothing sent)
+node scripts/record-demo-gif.mjs  # re-record docs/media/demo.gif (needs ffmpeg on PATH)
 ```
 All scripts honour `BASE_URL` (default http://localhost:3000).
 
