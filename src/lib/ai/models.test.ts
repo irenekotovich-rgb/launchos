@@ -27,3 +27,16 @@ describe("recoverJson edge cases (review PR #9)", () => {
     expect(recoverJson('Here {draft}:\n```json\n{"content":"ok"}\n```\nNote {x}', s)).toEqual({ content: "ok" });
   });
 });
+
+describe("model chain order", async () => {
+  const { modelChain } = await import("./models");
+  it("chains several Gemini models before OpenRouter (free quotas are per model)", () => {
+    const ids = modelChain({ GOOGLE_GENERATIVE_AI_API_KEY: "k", OPENROUTER_API_KEY: "k" } as unknown as NodeJS.ProcessEnv).map((c) => c.id);
+    expect(ids.slice(0, 3)).toEqual(["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]);
+    expect(ids[3]).toMatch(/^openrouter\//);
+  });
+  it("accepts a comma-separated Gemini override", () => {
+    const ids = modelChain({ GOOGLE_GENERATIVE_AI_API_KEY: "k", LAUNCHOS_PRIMARY_MODEL: "a, b" } as unknown as NodeJS.ProcessEnv).map((c) => c.id);
+    expect(ids).toEqual(["a", "b"]);
+  });
+});

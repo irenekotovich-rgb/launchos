@@ -26,6 +26,7 @@ export async function checkConsistency(
   const r = await generateStructured(consistencyOutput, text, modelChain(), Date.now() + 100_000);
   const ids = new Set(req.assets.map((a) => a.id));
   const findings = r.object.findings
+    .slice(0, 40)
     .filter((f) => ids.has(f.assetId)) // drop hallucinated asset ids
     // Drop findings whose "verbatim" excerpt isn't actually in the asset — a deterministic guard
     // against hallucinated findings.
