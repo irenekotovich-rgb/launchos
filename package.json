@@ -57,7 +57,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/irenekotovich-rgb/launchos"
+    "url": "https://github.com/iryna-kotovych/launchos"
   },
   "engines": {
     "node": ">=22"

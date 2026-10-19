@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: "A PMM directing Claude Code agents: docs first, one intake, small reviewed PRs, visual QA on every screen.",
 };
 
-const REPO = "https://github.com/irenekotovich-rgb/launchos";
+const REPO = "https://github.com/iryna-kotovych/launchos";
 
 const STEPS = [
   { title: "Docs before code", body: "PRD, positioning, launch plan and metrics were the first commit. Every later change that touched behaviour updated the docs in the same PR." },
