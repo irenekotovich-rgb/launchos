@@ -15,8 +15,8 @@ unactivated visit is vanity.
 | Input | Hero CTA click | `hero_cta_click` | ≥ 55% |
 | Input | Demo launch opened | `demo_opened` | ≥ 55% |
 | Input | Own brief started | `brief_started` | ≥ 15% |
-| Input | Brief → kit generated | `kit_generated` / started | ≥ 60% |
-| Input | Generation completes OK | `generation_completed` / started | ≥ 97% (fallback chain) |
+| Input | Brief → kit generated | `kit_generated` / `generation_started` | ≥ 60% |
+| Input | Generation completes OK | `generation_completed` (prop `status`: live / unavailable / budget-exhausted) / `generation_started` | ≥ 97% live (fallback chain) |
 | Depth | Consistency check run | `consistency_check_run` | ≥ 50% of kits |
 | Depth | Launch room shared / JSON exported | `room_shared` | ≥ 10% |
 | Depth | Analysis stage completed | `analysis_completed` | ≥ 30% of own launches |
@@ -25,8 +25,27 @@ unactivated visit is vanity.
 | Depth | Stage message opened for sending | `stage_notification_opened` | ≥ 80% of completed stages |
 | Depth | Metrics dashboard viewed | `metrics_dashboard_viewed` | ≥ 30% of launch-room views |
 | Depth | Bottleneck suggestion acted on | `bottleneck_suggestion_clicked` / `bottleneck_suggestion_shown` | ≥ 20% |
-| Guardrail | Time to demo room | timestamp diff | < 10 s |
+| Guardrail | Time to demo room | `launch_room_viewed` prop `ms_since_landing` | < 10 s |
 | Proxy (forks) | GitHub stars/forks/clones | GitHub traffic | tracked, no target |
+
+## Implementation notes
+- PostHog with privacy defaults: no cookies (in-memory persistence), no autocapture, no session
+  recording, Do-Not-Track respected, no personal data in properties; automated browsers are skipped.
+- `launch_room_viewed` carries `mode` (demo / own / shared); `hero_cta_click` carries `cta`
+  (demo / brief); `room_shared` carries `method` (link / export); suggestion events carry `kind`
+  and `severity` only (no launch content).
+- Event names are a closed union in `src/lib/analytics.ts`; a test fails if one isn't in this file.
+- URLs PostHog attaches (`$current_url`, `$pathname`, `$referrer`…) are reduced to route templates
+  (`/share/[id]`, `/launch/[id]`) before sending — share ids are credentials. Client IPs: enable
+  "Discard client IP data" in the PostHog project settings (recommended; an owner setting).
+- Denominators: percentages are of unique sessions (no landing-view event exists by design).
+  `demo_opened` includes direct visits to /demo, so it can exceed `hero_cta_click`.
+- `ms_since_landing` is sent only when the session started on another page (a deep link to the
+  room would report ~0 ms); it includes reading time on the landing page.
+- `generation_completed` counts all outcomes — filter on `status = live` for the ≥ 97% target.
+- `room_shared` fires on click for exports and after success for links.
+- `bottleneck_suggestion_shown` fires once per suggestion per page view;
+  `stage_notification_opened` once per stage per view, own launches only.
 
 ## First experiments
 1. **Hero framing A/B:** pain ("stop answering 'where are we?'") vs outcome

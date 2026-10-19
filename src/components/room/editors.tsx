@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import * as E from "@/lib/edit";
+import { track } from "@/lib/analytics";
 import { METRIC_LIMITS } from "@/lib/types";
 import { normalizeCurrency, parseAmount } from "@/lib/money";
 import { stageGate } from "@/lib/launch-status";
@@ -316,7 +317,14 @@ export function LockAlignment() {
   const blockers = E.lockBlockers(doc);
   return (
     <div className="flex flex-col gap-2 border-t border-border pt-4">
-      <Button className="self-start" disabled={blockers.length > 0} onClick={() => apply((d, now) => E.lockAlignment(d, now))}>
+      <Button
+        className="self-start"
+        disabled={blockers.length > 0}
+        onClick={() => {
+          track("alignment_locked");
+          apply((d, now) => E.lockAlignment(d, now));
+        }}
+      >
         Lock alignment
       </Button>
       {blockers.length > 0 && (
@@ -335,7 +343,14 @@ export function ClosePhase({ phase, name }: { phase: PhaseKey; name: string }) {
   const current = doc.phases.find((x) => !x.completedAt);
   if (current?.key !== phase) return null;
   return (
-    <Button size="sm" variant="outline" onClick={() => apply((d, now) => E.completePhase(d, phase, now))}>
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={() => {
+        if (phase === "analysis") track("analysis_completed");
+        apply((d, now) => E.completePhase(d, phase, now));
+      }}
+    >
       Close {name}
     </Button>
   );
@@ -468,7 +483,14 @@ export function AssetActions({ missing }: { missing: { type: AssetType; label: s
   return (
     <div className="mb-4 flex flex-col gap-2">
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" disabled={!hasAssets || aiBusy !== null} onClick={() => go("check", () => runConsistencyCheck(doc), "discard")}>
+        <Button
+          size="sm"
+          disabled={!hasAssets || aiBusy !== null}
+          onClick={() => {
+            track("consistency_check_run");
+            go("check", () => runConsistencyCheck(doc), "discard");
+          }}
+        >
           {aiBusy === "check" ? <Loader2 className="animate-spin" aria-hidden /> : <ShieldCheck aria-hidden />} Run consistency check
         </Button>
         {missing.map((m) => (
@@ -555,6 +577,7 @@ export function StageControls({ cumulative }: { cumulative: RolloutPercent }) {
         onSubmit={(e) => {
           e.preventDefault();
           if (!reason.trim()) return;
+          if (mode === "override") track("rollout_stage_completed", { stage: cumulative, override: true });
           apply((d, now) => (mode === "override" ? R.completeStage(d, cumulative, now, reason) : R.haltStage(d, cumulative, reason, now)));
           close();
         }}
@@ -583,6 +606,7 @@ export function StageControls({ cumulative }: { cumulative: RolloutPercent }) {
               return;
             }
             setNote(null);
+            track("rollout_stage_completed", { stage: cumulative, override: false });
             apply((d, now) => R.completeStage(d, cumulative, now));
           }}
         >
@@ -705,6 +729,7 @@ export function SharePanel() {
   }, [copied]);
 
   const exportJson = () => {
+    track("room_shared", { method: "export" });
     const blob = new Blob([JSON.stringify(toExportFile(doc, new Date()), null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -721,6 +746,7 @@ export function SharePanel() {
       const json = (await r.json()) as { status: string; id?: string; deleteToken?: string; message?: string };
       if (json.status === "ok" && json.id && json.deleteToken) {
         const info = { id: json.id, deleteToken: json.deleteToken, createdAt: new Date().toISOString() };
+        track("room_shared", { method: "link" });
         apply((d, now) => setShareInfo(d, info, now));
       } else setMessage(json.message ?? "Sharing failed — try again.");
     } catch {

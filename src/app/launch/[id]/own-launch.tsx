@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { runwayWarning } from "@/lib/plan";
 import { loadLaunch, saveLaunch } from "@/lib/storage";
 import { LaunchEditor } from "@/components/room/editors";
+import { TrackOnMount } from "@/components/analytics";
 import { LaunchRoom } from "@/components/room/launch-room";
 import type { LaunchDoc } from "@/lib/types";
 
@@ -57,6 +58,7 @@ export function OwnLaunch({ id }: { id: string }) {
   const warning = runwayWarning(doc.tier.tier, doc.brief.targetDate, new Date(doc.meta.createdAt));
   return (
     <div className="flex flex-col gap-4">
+      <TrackOnMount event="launch_room_viewed" props={{ mode: "own" }} />
       {saveError && (
         <div role="alert" className="sticky top-2 z-30 flex items-start justify-between gap-3 rounded-lg border border-destructive/40 bg-card p-3 text-sm text-destructive shadow-lg">
           <p>Unsaved: the last change couldn&apos;t be stored in this browser (storage full or blocked). It will be lost on reload.</p>

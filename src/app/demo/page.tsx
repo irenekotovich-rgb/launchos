@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site-header";
 import { LaunchRoom } from "@/components/room/launch-room";
 import { getDemoLaunch } from "@/lib/demo";
+import { TrackOnMount } from "@/components/analytics";
 
 export const metadata: Metadata = {
   title: "Demo launch: Launch Service — LaunchOS",
@@ -23,6 +24,8 @@ export default async function DemoPage({ searchParams }: { searchParams: Promise
     <>
       <SiteHeader />
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pb-28 pt-2">
+        <TrackOnMount event="demo_opened" />
+        <TrackOnMount event="launch_room_viewed" props={{ mode: "demo" }} />
         <LaunchRoom doc={getDemoLaunch(real)} now={now} basePath="/demo" liveClock={now === real} />
       </main>
     </>

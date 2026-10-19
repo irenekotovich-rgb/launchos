@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, CircleDashed, OctagonAlert, TrendingUp } from "lucide-react";
 import { fmtDay, fmtValue } from "@/lib/format";
+import { track } from "@/lib/analytics";
 import type { MetricState } from "@/lib/launch-status";
 import type { MetricSeries } from "@/lib/metric-series";
 import { cn } from "@/lib/utils";
@@ -113,12 +114,26 @@ function Chart({ s }: { s: MetricSeries }) {
 
 export function MetricsDashboard({ series }: { series: MetricSeries[] }) {
   const [view, setView] = useState<"charts" | "table">("charts");
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // "Viewed" = scrolled into view, once per page view.
+    const el = root.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        track("metrics_dashboard_viewed");
+        io.disconnect();
+      }
+    }, { threshold: 0.3 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   const groups = [
     { kind: "failure" as const, title: "Failure metrics — gate every stage" },
     { kind: "success" as const, title: "Success metrics — tracked toward launch day" },
   ];
   return (
-    <div className="flex flex-col gap-4">
+    <div ref={root} className="flex flex-col gap-4">
       <div className="flex justify-end gap-1" role="group" aria-label="Dashboard view">
         {(["charts", "table"] as const).map((v) => (
           <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)}

@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { runGeneration } from "@/lib/pipeline";
 import { saveLaunch } from "@/lib/storage";
+import { track } from "@/lib/analytics";
 import { EMPTY_FIELDS, LIMITS, MAX_YEARS_AHEAD, launchMoment, localDate, splitClaims, validateBrief } from "@/lib/brief";
 import type { Errors, Fields } from "@/lib/brief";
 import type { LaunchBrief } from "@/lib/types";
@@ -22,8 +23,13 @@ export function BriefForm() {
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<"idle" | "building" | "storage-error" | "generation-error">("idle");
 
+  const startedRef = useRef(false);
   const set = (k: keyof Fields) => (ev: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = ev.target.value;
+    if (!startedRef.current) {
+      startedRef.current = true;
+      track("brief_started");
+    }
     setFields((f) => ({ ...f, [k]: value }));
     setErrors((e) => (e[k] ? { ...e, [k]: undefined } : e));
   };
@@ -39,6 +45,7 @@ export function BriefForm() {
       return;
     }
     setStatus("building");
+    track("generation_started");
     let doc;
     try {
       const brief: LaunchBrief = {
@@ -50,6 +57,8 @@ export function BriefForm() {
         claims: splitClaims(fields.claims),
       };
       doc = await runGeneration(brief, now);
+      track("generation_completed", { status: doc.meta.generation?.status ?? "live" });
+      if (doc.assets.length) track("kit_generated", { assets: doc.assets.length });
     } catch {
       setStatus("generation-error");
       return;
