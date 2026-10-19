@@ -14,7 +14,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Absolute URLs for OG images: NEXT_PUBLIC_SITE_URL (self-hosting) → the deployment's own host on
+// Vercel (production domain in production, the preview URL on previews) → localhost.
+const vercelHost = process.env.VERCEL_ENV === "production" ? process.env.VERCEL_PROJECT_PRODUCTION_URL : process.env.VERCEL_URL;
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || (vercelHost ? `https://${vercelHost}` : "http://localhost:3000");
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "LaunchOS — your launch, in one URL",
   description:
     "Open-source launch room: analysis, alignment, plan, staged rollout, metrics and the full asset kit in one place.",

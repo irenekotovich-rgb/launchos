@@ -792,7 +792,9 @@ export function SharePanel() {
           <p id="share-warning">
             <span className="font-semibold text-warning">Anyone with the link can view this launch.</span> The snapshot is
             uploaded to this deployment&apos;s storage. Recipient emails, sign-off names, owners and notes are removed; the brief,
-            analysis, assets and decisions are published as written. Links expire after {SHARE_TTL_DAYS} days.
+            analysis, assets and decisions are published as written. Link previews in Slack or LinkedIn show the product
+            name, tier, rollout and launch day — and chat apps may keep a cached preview after you delete the link.
+            Links expire after {SHARE_TTL_DAYS} days.
           </p>
           {emails.length > 0 && (
             <p className="font-medium text-warning">
