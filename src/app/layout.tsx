@@ -14,7 +14,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Absolute URLs for OG images: production URL on Vercel, localhost otherwise.
+const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "LaunchOS — your launch, in one URL",
   description:
     "Open-source launch room: analysis, alignment, plan, staged rollout, metrics and the full asset kit in one place.",
