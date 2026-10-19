@@ -37,7 +37,7 @@ citizens of this repo.
 
 ## Commands
 - `npm run dev` — local dev
-- `npm run build && npm run lint` — must pass before every commit
+- `npm run build && npm run lint && npm test` — must pass before every commit (CI also runs `tsc`)
 - `npm run qa:visual` — Playwright screenshots of all routes at 390/768/1440 px
   into /qa-shots (see Visual QA below)
 
@@ -56,6 +56,14 @@ No direct pushes to main after the initial docs commit. For every logical task:
    runs hands-off end-to-end. Unresolvable review points go to
    docs/decisions-log.md
 Target: 10–15 PRs across the project, each readable in under 5 minutes.
+
+## Dependency security updates
+Dependabot alerts and security updates are on. Its PRs are not merged blindly:
+- CI (lint, tsc, tests, build — required check `checks` on main) must be green;
+- the lockfile diff should touch only the advised package and its dependents; skim its changelog,
+  be wary of major bumps;
+- request `@claude` review, answer it, merge like any PR (its `dependabot/…` branch names are fine);
+- CI red → comment `@dependabot rebase`; still red → fix on the branch or close it and log why.
 
 ## Visual QA — mandatory before any UI PR
 - Run the app, screenshot every changed screen at 390 / 768 / 1440 px

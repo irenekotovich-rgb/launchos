@@ -1,0 +1,34 @@
+name: CI
+
+# Every pull request (including Dependabot's security updates) must pass the same gate the
+# project uses locally: lint, type check, unit tests, production build. No secrets needed —
+# model and storage keys are optional by design, so the build runs on an empty env.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Cancel superseded runs on a PR, but let every push to main finish so each commit gets a result.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # Same major as the Vercel runtime (.nvmrc) — CI caught an Intl difference between Node versions.
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm test
+      - run: npm run build
