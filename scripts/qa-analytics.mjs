@@ -11,6 +11,10 @@ await page.addInitScript(() => {
 });
 const events = [];
 const urls = [];
+const countries = [];
+// Simulate Vercel geolocation locally.
+// Simulate Vercel geolocation locally; GEO=broken answers `null` to prove events still flow.
+await page.route("**/api/geo", (r) => r.fulfill(process.env.GEO === "broken" ? { body: "null", contentType: "application/json" } : { json: { country: "DE" } }));
 await page.route(/posthog\.com/, async (route) => {
   const req = route.request();
   const isCapture = /\/(e|i\/v0\/e|batch)\/?(\?|$)/.test(new URL(req.url()).pathname + "?");
@@ -24,6 +28,7 @@ await page.route(/posthog\.com/, async (route) => {
   if (process.env.DEBUG_QA) console.log(req.url().slice(0, 80), text.slice(0, 120));
   for (const m of text.matchAll(/"event"\s*:\s*"([a-z_]+)"/g)) events.push(m[1]);
   for (const m of text.matchAll(/"\$current_url"\s*:\s*"([^"]+)"/g)) urls.push(m[1]);
+  for (const m of text.matchAll(/"country"\s*:\s*"([A-Z]{2})"/g)) countries.push(m[1]);
   await route.fulfill({ status: 200, body: "{}" });
 });
 await page.goto(B + "/");
@@ -34,5 +39,6 @@ await page.waitForTimeout(3500); // posthog batches requests
 await page.goto("about:blank"); // flush on unload
 await page.waitForTimeout(1000);
 console.log("events:", [...new Set(events)].sort().join(", ") || "(none)");
+console.log("country on events:", [...new Set(countries)].join(", ") || "(none)");
 console.log("urls sent:", [...new Set(urls)].join(", ") || "(none)");
 await browser.close();
