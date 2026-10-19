@@ -60,7 +60,7 @@
     "url": "https://github.com/irenekotovich-rgb/launchos"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "overrides": {
     "postcss": "^8.5.23"

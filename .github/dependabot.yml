@@ -8,8 +8,10 @@ updates:
     # 0 = no routine version bumps — only security fixes open PRs.
     open-pull-requests-limit: 0
     labels: [dependencies, security]
+    # schedule is inert while the limit is 0; security PRs open as soon as an alert fires.
     commit-message:
       prefix: "fix(deps)"
+      prefix-development: "chore(deps-dev)"
   - package-ecosystem: github-actions
     directory: /
     schedule:

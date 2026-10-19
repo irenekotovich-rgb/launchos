@@ -11,9 +11,10 @@ on:
 permissions:
   contents: read
 
+# Cancel superseded runs on a PR, but let every push to main finish so each commit gets a result.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   checks:
@@ -23,7 +24,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # Same major as the Vercel runtime (.nvmrc) — CI caught an Intl difference between Node versions.
+          node-version-file: .nvmrc
           cache: npm
       - run: npm ci
       - run: npm run lint

@@ -37,7 +37,7 @@ export function cleanExpected(x: unknown): ExpectedResults | undefined {
 
 export function formatMoney(i: Impact): string {
   try {
-    return new Intl.NumberFormat("en", { style: "currency", currency: normalizeCurrency(i.currency), notation: "compact", maximumFractionDigits: 1 }).format(i.amount);
+    return new Intl.NumberFormat("en", { style: "currency", currency: normalizeCurrency(i.currency), notation: "compact", minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(i.amount);
   } catch {
     return `${i.amount} ${i.currency}`;
   }
