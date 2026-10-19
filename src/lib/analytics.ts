@@ -75,10 +75,15 @@ export function initAnalytics(): void {
     });
     // Country only (ISO code from Vercel's edge header) — never an IP. Registered before the
     // queued events flush so every event carries it; on failure events simply have no country.
-    void fetch("/api/geo")
-      .then((r) => (r.ok ? (r.json() as Promise<{ country: string | null }>) : { country: null }))
-      .catch(() => ({ country: null }))
-      .then(({ country }) => {
+    // Any failure (non-JSON, null body, hang > 2 s) ends in .catch → events still flush, without a country.
+    void fetch("/api/geo", { signal: AbortSignal.timeout(2000) })
+      .then((r) => (r.ok ? (r.json() as Promise<unknown>) : null))
+      .then((j) => {
+        const c = j && typeof j === "object" ? (j as { country?: unknown }).country : null;
+        return typeof c === "string" && /^[A-Z]{2}$/.test(c) ? c : null;
+      })
+      .catch(() => null)
+      .then((country) => {
         if (country) posthog.register({ country });
         client = posthog;
         for (const [e, p] of queue.splice(0)) posthog.capture(e, p);

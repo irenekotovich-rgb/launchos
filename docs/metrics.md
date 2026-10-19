@@ -37,9 +37,10 @@ unactivated visit is vanity.
 - Event names are a closed union in `src/lib/analytics.ts`; a test fails if one isn't in this file.
 - URLs PostHog attaches (`$current_url`, `$pathname`, `$referrer`…) are reduced to route templates
   (`/share/[id]`, `/launch/[id]`) before sending — share ids are credentials.
-- Location: every event carries `country` (ISO 3166-1 alpha-2, from Vercel's `x-vercel-ip-country`
-  via `/api/geo`) and nothing finer. Client IPs are not needed: enable "Discard client IP data" in the
-  PostHog project settings (an owner setting).
+- Location: events carry `country` when available (ISO 3166-1 alpha-2, from Vercel's
+  `x-vercel-ip-country` via `/api/geo`; only trustworthy on Vercel) and nothing finer. The browser
+  still reaches PostHog with an IP; enable "Discard client IP data" in the PostHog project so it isn't
+  stored (an owner setting). Until then PostHog may also add its own `$geoip_*` properties.
 - Denominators: percentages are of unique sessions (no landing-view event exists by design).
   `demo_opened` includes direct visits to /demo, so it can exceed `hero_cta_click`.
 - `ms_since_landing` is sent only when the session started on another page (a deep link to the

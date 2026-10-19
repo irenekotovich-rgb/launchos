@@ -13,7 +13,8 @@ const events = [];
 const urls = [];
 const countries = [];
 // Simulate Vercel geolocation locally.
-await page.route("**/api/geo", (r) => r.fulfill({ json: { country: "DE" } }));
+// Simulate Vercel geolocation locally; GEO=broken answers `null` to prove events still flow.
+await page.route("**/api/geo", (r) => r.fulfill(process.env.GEO === "broken" ? { body: "null", contentType: "application/json" } : { json: { country: "DE" } }));
 await page.route(/posthog\.com/, async (route) => {
   const req = route.request();
   const isCapture = /\/(e|i\/v0\/e|batch)\/?(\?|$)/.test(new URL(req.url()).pathname + "?");
