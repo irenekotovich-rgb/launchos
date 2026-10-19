@@ -52,7 +52,7 @@ flowchart LR
 
 ## Run it with your own keys (BYO-key)
 ```bash
-git clone https://github.com/irenekotovich-rgb/launchos.git && cd launchos
+git clone https://github.com/iryna-kotovych/launchos.git && cd launchos
 cp .env.example .env.local   # every value is optional — see "Environment variables" below
 npm ci
 npm run dev                  # http://localhost:3000
@@ -82,7 +82,7 @@ live generation. Your launches, your tokens, your data — launches stay in your
 With [Claude Code](https://claude.com/claude-code). I wrote the docs and the kickoff prompts and
 made the product calls; AI agents built the app through small pull requests — each with a
 reviewer-grade description, an automated `@claude` review, a reply to every comment, and visual QA
-screenshots. Read the [merged PRs](https://github.com/irenekotovich-rgb/launchos/pulls?q=is%3Apr+is%3Amerged),
+screenshots. Read the [merged PRs](https://github.com/iryna-kotovych/launchos/pulls?q=is%3Apr+is%3Amerged),
 the [decisions log](docs/decisions-log.md) and [How I built this](https://launchos-five.vercel.app/how).
 
 ## Key decisions

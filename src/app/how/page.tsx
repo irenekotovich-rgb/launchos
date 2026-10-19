@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
+import { REPO_URL } from "@/lib/author";
 
 export const metadata: Metadata = {
   title: "How I built this — LaunchOS",
   description: "A PMM directing Claude Code agents: docs first, one intake, small reviewed PRs, visual QA on every screen.",
 };
 
-const REPO = "https://github.com/irenekotovich-rgb/launchos";
+const REPO = REPO_URL;
 
 const STEPS = [
   { title: "Docs before code", body: "PRD, positioning, launch plan and metrics were the first commit. Every later change that touched behaviour updated the docs in the same PR." },
