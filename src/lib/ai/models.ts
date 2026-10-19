@@ -6,7 +6,12 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateText, NoObjectGeneratedError, Output, type LanguageModel } from "ai";
 import type { z } from "zod";
 
-export const DEFAULT_PRIMARY = "gemini-3.5-flash";
+/**
+ * Gemini models tried in order. Free-tier quotas are per model per day, so chaining several
+ * multiplies the free budget; the lite models are also the fastest.
+ */
+export const DEFAULT_GEMINI = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
+
 export const DEFAULT_FALLBACKS = [
   "poolside/laguna-s-2.1:free", // fastest structured output in a 2026-10-18 benchmark (~2.5s)
   "nvidia/nemotron-3-super-120b-a12b:free",
@@ -22,12 +27,13 @@ export function modelChain(env: NodeJS.ProcessEnv = process.env): Candidate[] {
   const chain: Candidate[] = [];
   if (env.GOOGLE_GENERATIVE_AI_API_KEY) {
     const google = createGoogleGenerativeAI({ apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY });
-    const id = env.LAUNCHOS_PRIMARY_MODEL || DEFAULT_PRIMARY;
-    chain.push({ id, model: google(id) });
+    // LAUNCHOS_PRIMARY_MODEL may be one id or a comma-separated list of Gemini models.
+    const ids = env.LAUNCHOS_PRIMARY_MODEL?.trim() ? env.LAUNCHOS_PRIMARY_MODEL.split(",").map((s) => s.trim()) : DEFAULT_GEMINI;
+    for (const id of ids.filter(Boolean)) chain.push({ id, model: google(id) });
   }
   if (env.OPENROUTER_API_KEY) {
     const openrouter = createOpenRouter({ apiKey: env.OPENROUTER_API_KEY });
-    const ids = env.LAUNCHOS_FALLBACK_MODELS ? env.LAUNCHOS_FALLBACK_MODELS.split(",").map((s) => s.trim()) : DEFAULT_FALLBACKS;
+    const ids = env.LAUNCHOS_FALLBACK_MODELS?.trim() ? env.LAUNCHOS_FALLBACK_MODELS.split(",").map((s) => s.trim()) : DEFAULT_FALLBACKS;
     for (const id of ids.filter(Boolean)) chain.push({ id: `openrouter/${id}`, model: openrouter(id) });
   }
   return chain;
@@ -51,6 +57,11 @@ export function recoverJson<T>(text: string | undefined, schema: z.ZodType<T>): 
   } catch {
     return null;
   }
+}
+
+/** Loggable form of a chain failure: per-model messages when available. */
+export function describeError(err: unknown): unknown {
+  return err instanceof GenerationUnavailable ? err.attempts : err;
 }
 
 export class GenerationUnavailable extends Error {
