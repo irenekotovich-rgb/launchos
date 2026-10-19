@@ -35,6 +35,17 @@ unactivated visit is vanity.
   (demo / brief); `room_shared` carries `method` (link / export); suggestion events carry `kind`
   and `severity` only (no launch content).
 - Event names are a closed union in `src/lib/analytics.ts`; a test fails if one isn't in this file.
+- URLs PostHog attaches (`$current_url`, `$pathname`, `$referrer`…) are reduced to route templates
+  (`/share/[id]`, `/launch/[id]`) before sending — share ids are credentials. Client IPs: enable
+  "Discard client IP data" in the PostHog project settings (recommended; an owner setting).
+- Denominators: percentages are of unique sessions (no landing-view event exists by design).
+  `demo_opened` includes direct visits to /demo, so it can exceed `hero_cta_click`.
+- `ms_since_landing` is sent only when the session started on another page (a deep link to the
+  room would report ~0 ms); it includes reading time on the landing page.
+- `generation_completed` counts all outcomes — filter on `status = live` for the ≥ 97% target.
+- `room_shared` fires on click for exports and after success for links.
+- `bottleneck_suggestion_shown` fires once per suggestion per page view;
+  `stage_notification_opened` once per stage per view, own launches only.
 
 ## First experiments
 1. **Hero framing A/B:** pain ("stop answering 'where are we?'") vs outcome

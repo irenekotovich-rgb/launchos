@@ -57,7 +57,7 @@ export function BriefForm() {
         claims: splitClaims(fields.claims),
       };
       doc = await runGeneration(brief, now);
-      track("generation_completed", { status: doc.meta.generation?.status ?? "unknown" });
+      track("generation_completed", { status: doc.meta.generation?.status ?? "live" });
       if (doc.assets.length) track("kit_generated", { assets: doc.assets.length });
     } catch {
       setStatus("generation-error");

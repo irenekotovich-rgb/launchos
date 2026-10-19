@@ -215,6 +215,8 @@ export type SectionId =
 
 export interface Suggestion {
   id: string;
+  /** Stable, content-free category (safe for analytics), e.g. "metric-near". */
+  kind: string;
   severity: "warn" | "info";
   title: string;
   detail: string;
@@ -232,6 +234,7 @@ export function bottlenecks(doc: LaunchDoc, now: Date): Suggestion[] {
   if (current && now.getTime() > Date.parse(current.eta)) {
     const days = Math.ceil((now.getTime() - Date.parse(current.eta)) / DAY);
     out.push({
+      kind: "phase-overdue",
       id: `phase-overdue-${current.key}`,
       severity: "warn",
       title: `${current.name} is ${days} day${days === 1 ? "" : "s"} past its ETA`,
@@ -244,6 +247,7 @@ export function bottlenecks(doc: LaunchDoc, now: Date): Suggestion[] {
     const open = signoffList(doc).filter((s) => s.status !== "signed");
     if (open.length) {
       out.push({
+        kind: "alignment-open",
         id: "alignment-open",
         severity: open.some((s) => s.status === "objected") ? "warn" : "info",
         title: `${open.length} team${open.length === 1 ? "" : "s"} haven't signed off`,
@@ -256,6 +260,7 @@ export function bottlenecks(doc: LaunchDoc, now: Date): Suggestion[] {
   const stage = activeStage(doc);
   if (stage?.status === "halted") {
     out.push({
+      kind: "stage-halted",
       id: `stage-halted-${stage.cumulative}`,
       severity: "warn",
       title: `Rollout halted at ${stage.cumulative}%`,
@@ -265,6 +270,7 @@ export function bottlenecks(doc: LaunchDoc, now: Date): Suggestion[] {
   }
   if (doc.alignment.metrics.every((m) => m.kind !== "failure")) {
     out.push({
+      kind: "no-failure-metrics",
       id: "no-failure-metrics",
       severity: "warn",
       title: "No failure metrics agreed",
@@ -276,6 +282,7 @@ export function bottlenecks(doc: LaunchDoc, now: Date): Suggestion[] {
     const gate = stageGate(doc, stage, now);
     for (const m of gate.breached) {
       out.push({
+        kind: "metric-breached",
         id: `metric-breached-${m.id}`,
         severity: "warn",
         title: `${m.name} breached its failure threshold`,
@@ -285,6 +292,7 @@ export function bottlenecks(doc: LaunchDoc, now: Date): Suggestion[] {
     }
     for (const m of gate.near) {
       out.push({
+        kind: "metric-near",
         id: `metric-near-${m.id}`,
         severity: "warn",
         title: `${m.name} is close to its failure threshold`,
@@ -294,6 +302,7 @@ export function bottlenecks(doc: LaunchDoc, now: Date): Suggestion[] {
     }
     if (gate.stale.length || gate.missing.length) {
       out.push({
+        kind: "readings-stale",
         id: `readings-stale-${stage.cumulative}`,
         severity: "info",
         title: "Metric readings need an update",
@@ -306,6 +315,7 @@ export function bottlenecks(doc: LaunchDoc, now: Date): Suggestion[] {
   const next = doc.rollout.stages.find((s) => s.status === "not-started");
   if (next && now.getTime() > Date.parse(next.plannedStart)) {
     out.push({
+      kind: "stage-late",
       id: `stage-late-${next.cumulative}`,
       severity: "warn",
       title: `${next.cumulative}% rollout was planned to start already`,
@@ -317,6 +327,7 @@ export function bottlenecks(doc: LaunchDoc, now: Date): Suggestion[] {
   const stale = doc.assets.filter((a) => a.status === "stale");
   if (stale.length) {
     out.push({
+      kind: "assets-stale",
       id: "assets-stale",
       severity: "warn",
       title: `${stale.length} asset${stale.length === 1 ? " has" : "s have"} drifted from the brief`,
@@ -332,6 +343,7 @@ export function bottlenecks(doc: LaunchDoc, now: Date): Suggestion[] {
     const daysLeft = (Date.parse(current.eta) - now.getTime()) / DAY;
     if (open.length && daysLeft <= CHECKLIST_WARNING_DAYS) {
       out.push({
+        kind: "checklist-open",
         id: `checklist-open-${current.key}`,
         severity: "info",
         title: `${open.length} open checklist item${open.length === 1 ? "" : "s"} before ${current.name} closes`,

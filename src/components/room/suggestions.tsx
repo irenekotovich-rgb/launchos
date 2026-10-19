@@ -68,25 +68,19 @@ export function Suggestions({ items, storageKey }: { items: Suggestion[]; storag
   };
 
   const open = items.filter((s) => !dismissed.includes(s.id));
-  return <SuggestionsView {...{ open, dismissed, minimised, showAll, setShowAll, mounted, expand, minimise, dismiss, persist, pillRef, headingRef, setMinimised }} />;
-}
-
-/** Kind of a suggestion id without launch-specific parts, e.g. "metric-near" — safe as an analytics property. */
-const kindOf = (id: string) => id.replace(/-(f|s|d|c)-[\w-]+$|-\d+$|-(analysis|alignment|brief|assets|readiness|rollout)$/g, "");
-
-function SuggestionsView({
-  open, dismissed, minimised, showAll, setShowAll, mounted, expand, minimise, dismiss, persist, pillRef, headingRef, setMinimised,
-}: {
-  open: Suggestion[]; dismissed: string[]; minimised: boolean; showAll: boolean; setShowAll: (f: (v: boolean) => boolean) => void; mounted: boolean;
-  expand: () => void; minimise: () => void; dismiss: (id: string) => void; persist: (n: string[]) => void;
-  pillRef: React.RefObject<HTMLButtonElement | null>; headingRef: React.RefObject<HTMLParagraphElement | null>; setMinimised: (v: boolean) => void;
-}) {
-  const shownKey = open.map((s) => s.id).join("|");
+  // Each suggestion is reported as "shown" once per page view, whatever re-renders happen.
+  const reported = useRef(new Set<string>());
+  const openKey = open.map((s) => s.id).join("|");
   useEffect(() => {
     if (!mounted) return;
-    for (const s of open) track("bottleneck_suggestion_shown", { kind: kindOf(s.id), severity: s.severity });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, shownKey]);
+    for (const s of open) {
+      if (reported.current.has(s.id)) continue;
+      reported.current.add(s.id);
+      track("bottleneck_suggestion_shown", { kind: s.kind, severity: s.severity });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `open` is captured via openKey
+  }, [mounted, openKey]);
+
   if (!mounted) return null;
   const warn = open.some((s) => s.severity === "warn");
 
@@ -152,7 +146,7 @@ function SuggestionsView({
               <a
                 href={`#${s.section}`}
                 onClick={() => {
-                  track("bottleneck_suggestion_clicked", { kind: kindOf(s.id), severity: s.severity });
+                  track("bottleneck_suggestion_clicked", { kind: s.kind, severity: s.severity });
                   if (onNarrow()) setMinimised(true);
                 }}
                 className="text-sm font-semibold leading-snug hover:underline"

@@ -1,10 +1,9 @@
-"use client";
-
 // Product analytics (docs/metrics.md). Event names are a closed union — exactly the names in the
 // metrics tree. Privacy: no cookies (in-memory persistence), no autocapture, no session recording,
-// Do-Not-Track respected, no personal data in properties. Without NEXT_PUBLIC_POSTHOG_KEY every
-// call is a no-op, so forks and local runs send nothing.
-import posthog from "posthog-js";
+// Do-Not-Track respected, no launch content in properties, and URLs are reduced to route templates
+// before sending (share ids are credentials). Without NEXT_PUBLIC_POSTHOG_KEY nothing loads at all:
+// posthog-js is imported lazily, so forks without a key pay no bundle cost.
+import type { PostHog } from "posthog-js";
 
 export type AnalyticsEvent =
   | "launch_room_viewed"
@@ -26,8 +25,23 @@ export type AnalyticsEvent =
 
 type Props = Record<string, string | number | boolean>;
 
+let client: PostHog | null = null;
 let started = false;
-const LANDED_AT = "launchos:landed-at";
+const queue: [AnalyticsEvent, Props][] = [];
+const LANDED = "launchos:landed";
+
+/** /share/<id>/… → /share/[id]/…, /launch/<id>/… → /launch/[id]/…; query strings and hashes dropped. */
+export function templatePath(url: string): string {
+  try {
+    const u = new URL(url, "https://x.invalid");
+    const path = u.pathname.replace(/^\/(share|launch)\/[^/]+/, "/$1/[id]");
+    return u.origin === "https://x.invalid" ? path : `${u.origin}${path}`;
+  } catch {
+    return "";
+  }
+}
+
+const URL_PROPS = ["$current_url", "$pathname", "$referrer", "$initial_current_url", "$initial_pathname", "$initial_referrer", "$referring_domain"];
 
 export function initAnalytics(): void {
   const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
@@ -35,33 +49,50 @@ export function initAnalytics(): void {
   // Automated browsers (Playwright visual QA, crawlers that admit it) never count as visitors.
   if (navigator.webdriver) return;
   started = true;
-  posthog.init(key, {
-    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://eu.i.posthog.com",
-    persistence: "memory",
-    autocapture: false,
-    capture_pageview: false,
-    capture_pageleave: false,
-    disable_session_recording: true,
-    respect_dnt: true,
-    person_profiles: "never",
-  });
   try {
-    if (!sessionStorage.getItem(LANDED_AT)) sessionStorage.setItem(LANDED_AT, String(Date.now()));
+    if (!sessionStorage.getItem(LANDED)) sessionStorage.setItem(LANDED, JSON.stringify({ t: Date.now(), path: location.pathname }));
   } catch {
     /* storage blocked: the time-to-room guardrail just isn't measured */
   }
+  void import("posthog-js").then(({ default: posthog }) => {
+    posthog.init(key, {
+      api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://eu.i.posthog.com",
+      persistence: "memory",
+      autocapture: false,
+      capture_pageview: false,
+      capture_pageleave: false,
+      disable_session_recording: true,
+      respect_dnt: true,
+      person_profiles: "never",
+      before_send: (event) => {
+        if (!event) return event;
+        for (const k of URL_PROPS) {
+          const v = event.properties?.[k];
+          if (typeof v === "string") event.properties[k] = k === "$referring_domain" ? v : templatePath(v);
+        }
+        return event;
+      },
+    });
+    client = posthog;
+    for (const [e, p] of queue.splice(0)) posthog.capture(e, p);
+  });
 }
 
 export function track(event: AnalyticsEvent, props: Props = {}): void {
   if (!started) return;
-  posthog.capture(event, props);
+  if (client) client.capture(event, props);
+  else queue.push([event, props]);
 }
 
-/** Milliseconds since the first page of this session — the "time to demo room" guardrail. */
+/**
+ * Milliseconds from the session's first page to now — the "time to demo room" guardrail.
+ * Undefined when the session started on this very page (a deep link would report ~0 ms).
+ */
 export function msSinceLanding(): number | undefined {
   try {
-    const t = Number(sessionStorage.getItem(LANDED_AT));
-    return t ? Date.now() - t : undefined;
+    const landed = JSON.parse(sessionStorage.getItem(LANDED) ?? "null") as { t: number; path: string } | null;
+    if (!landed || landed.path === location.pathname) return undefined;
+    return Date.now() - landed.t;
   } catch {
     return undefined;
   }

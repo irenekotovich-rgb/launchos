@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Copy, Mail } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { MAILTO_MAX_LENGTH, mailtoUrl, type StageMessage as Message } from "@/lib/notify";
@@ -14,9 +14,15 @@ import { useOptionalEditor } from "./editors";
 export function StageMessage({ message, label, stage }: { message: Message; label: string; stage: RolloutPercent }) {
   const editor = useOptionalEditor();
   // In an own launch, opening or copying the message records it as sent (the PMM's client sends it).
+  const reported = useRef(false);
+  // Only own launches count (the demo and shared views have no editor); once per stage per view.
   const sent = () => {
-    track("stage_notification_opened", { stage });
-    editor?.apply((d, now) => markNotified(d, stage, now));
+    if (!editor) return;
+    if (!reported.current) {
+      reported.current = true;
+      track("stage_notification_opened", { stage });
+    }
+    editor.apply((d, now) => markNotified(d, stage, now));
   };
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);

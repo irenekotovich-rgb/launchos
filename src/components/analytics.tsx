@@ -14,6 +14,7 @@ export function TrackOnMount({ event, props }: { event: AnalyticsEvent; props?: 
     initAnalytics();
     const ms = event === "launch_room_viewed" ? msSinceLanding() : undefined;
     track(event, { ...props, ...(ms !== undefined ? { ms_since_landing: ms } : {}) });
+    // Fires once per mount: props are static at every call site, so they are not a dependency.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [event]);
   return null;
