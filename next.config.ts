@@ -6,10 +6,9 @@ const nextConfig: NextConfig = {
     "/api/generate": ["./prompts/**/*.md"],
     "/api/consistency": ["./prompts/**/*.md"],
     "/api/asset": ["./prompts/**/*.md"],
-    // OG cards render with Geist from the npm package.
-    "/opengraph-image": ["./node_modules/geist/dist/fonts/geist-sans/Geist-{Regular,Bold}.ttf"],
-    "/demo/opengraph-image": ["./node_modules/geist/dist/fonts/geist-sans/Geist-{Regular,Bold}.ttf"],
-    "/share/[id]/opengraph-image": ["./node_modules/geist/dist/fonts/geist-sans/Geist-{Regular,Bold}.ttf"],
+    // OG cards render with Geist from the npm package; included for every route so metadata-route
+    // naming can never silently miss them (two small files).
+    "/**/*": ["./node_modules/geist/dist/fonts/geist-sans/Geist-{Regular,Bold}.ttf"],
   },
 };
 

@@ -11,17 +11,41 @@ const chrome = "linear-gradient(180deg, #ffffff 0%, #d9d9de 32%, #8b8b94 54%, #e
 
 const fontDir = path.join(process.cwd(), "node_modules/geist/dist/fonts/geist-sans");
 let fonts: Promise<{ name: string; data: Buffer; weight: 400 | 700; style: "normal" }[]> | null = null;
-/** Geist from the npm package (bundled with the function) — no network needed to render. */
+/**
+ * Geist from the npm package (traced into every function via next.config) — no network needed.
+ * A failed read is logged and retried on the next render instead of being cached forever.
+ */
 function loadFonts() {
   fonts ??= Promise.all([
     readFile(path.join(fontDir, "Geist-Regular.ttf")).then((data) => ({ name: "Geist", data, weight: 400 as const, style: "normal" as const })),
     readFile(path.join(fontDir, "Geist-Bold.ttf")).then((data) => ({ name: "Geist", data, weight: 700 as const, style: "normal" as const })),
-  ]);
+  ]).catch((err) => {
+    console.error("[og] font load failed — falling back to sans-serif", err);
+    fonts = null;
+    throw err;
+  });
   return fonts;
 }
 
-export async function ogCard({ kicker, title, stats = [] }: { kicker: string; title: string; stats?: { value: string; label: string }[] }) {
+const TITLE_MAX = 70;
+
+// Node runtime on purpose: fonts are read with node:fs (edge has no filesystem).
+export async function ogCard({
+  kicker,
+  title: rawTitle,
+  stats = [],
+  tagline = "Your launch, in one URL.",
+  headers,
+}: {
+  kicker: string;
+  title: string;
+  stats?: { value: string; label: string }[];
+  tagline?: string;
+  headers?: Record<string, string>;
+}) {
   const fontData = await loadFonts().catch(() => undefined);
+  // Long names are clamped so the byline always stays on the card (attribution rule).
+  const title = rawTitle.length > TITLE_MAX ? `${rawTitle.slice(0, TITLE_MAX - 1).trimEnd()}…` : rawTitle;
   const size = title.length > 34 ? 64 : title.length > 22 ? 80 : 96;
   return new ImageResponse(
     (
@@ -83,13 +107,13 @@ export async function ogCard({ kicker, title, stats = [] }: { kicker: string; ti
           )}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 24, color: "#d4d4da" }}>
-          <div style={{ display: "flex" }}>{title === "Your launch, in one URL." ? "Open source · bring your own key" : "Your launch, in one URL."}</div>
+          <div style={{ display: "flex" }}>{tagline}</div>
           <div style={{ display: "flex" }}>
             Made by&nbsp;<span style={{ color: "#ffffff", fontWeight: 700 }}>{AUTHOR.name}</span>
           </div>
         </div>
       </div>
     ),
-    { ...OG_SIZE, ...(fontData ? { fonts: fontData } : {}) },
+    { ...OG_SIZE, ...(fontData ? { fonts: fontData } : {}), ...(headers ? { headers } : {}) },
   );
 }
