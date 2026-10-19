@@ -181,11 +181,11 @@ export function projectedEndDate(doc: LaunchDoc, now: Date): Date {
   return new Date(target + Math.max(carried, open));
 }
 
+/** Minute precision by design (owner: the countdown shows no seconds). */
 export interface Countdown {
   days: number;
   hours: number;
   minutes: number;
-  seconds: number;
   past: boolean;
 }
 
@@ -197,7 +197,7 @@ export function countdown(target: Date, now: Date): Countdown {
   const hours = Math.floor(s / 3_600);
   s -= hours * 3_600;
   const minutes = Math.floor(s / 60);
-  return { days, hours, minutes, seconds: s - minutes * 60, past: diff <= 0 };
+  return { days, hours, minutes, past: diff <= 0 };
 }
 
 // ---------------------------------------------------------------- bottlenecks
