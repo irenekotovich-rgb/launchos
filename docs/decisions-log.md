@@ -99,3 +99,4 @@
 - 2026-10-19 — Owner wants country and nothing else: events carry `country` (ISO code from Vercel's x-vercel-ip-country via /api/geo); PostHog's own IP-based geo isn't relied on, so 'Discard client IP data' can be enabled without losing country.
 - 2026-10-19 — Owner: Dependabot alerts + security updates enabled; every PR (incl. Dependabot's) runs CI — lint, tsc, tests, build — and Dependabot PRs still go through @claude review before merge. Routine version-bump PRs are off (security fixes only).
 - 2026-10-19 — CI's first run caught a real bug: Intl compact currency renders "$288.0K" on Node 22/24 vs "$288K" on Node 26 — fixed with minimumFractionDigits: 0; CI pinned to the Vercel Node major via .nvmrc. Required status check `checks` on main via a repository ruleset.
+- 2026-10-19 — Owner: the countdown shows days · hours · minutes, no seconds, everywhere (demo, own launches, shared rooms); it re-renders every 15 s.

@@ -13,7 +13,8 @@ export function Countdown({ target, initialNow, live = true }: { target: string;
   useEffect(() => {
     if (!live) return;
     setNow(new Date());
-    const t = setInterval(() => setNow(new Date()), 1000);
+    // Minute precision is all the countdown shows (owner: no seconds), so a 15 s tick is plenty.
+    const t = setInterval(() => setNow(new Date()), 15_000);
     return () => clearInterval(t);
   }, [live]);
   const c = countdown(new Date(target), now);
@@ -21,13 +22,12 @@ export function Countdown({ target, initialNow, live = true }: { target: string;
     { v: c.days, l: "days" },
     { v: c.hours, l: "hours" },
     { v: c.minutes, l: "min" },
-    { v: c.seconds, l: "sec" },
   ];
   if (c.past) {
     return <p className="text-2xl font-bold text-white">Launch day has passed</p>;
   }
   return (
-    <div className="grid grid-cols-4 gap-2" role="timer" aria-label={`${c.days} days ${c.hours} hours ${c.minutes} minutes to launch`}>
+    <div className="grid grid-cols-3 gap-2" role="timer" aria-label={`${c.days} days ${c.hours} hours ${c.minutes} minutes to launch`}>
       {cells.map((cell) => (
         <div key={cell.l} className="rounded-2xl border border-white/15 bg-black/35 px-1 py-3 text-center shadow-[inset_0_1px_0_rgb(255_255_255/0.12)]">
           <b className="text-chrome block font-mono text-2xl font-extrabold tabular-nums sm:text-3xl">
