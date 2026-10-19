@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { LaunchRoom, SharedBanner } from "@/components/room/launch-room";
 import { SHARE_ID } from "@/lib/share";
 import { getShare } from "@/lib/share-store";
+import { TrackOnMount } from "@/components/analytics";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,7 @@ export default async function SharedLaunch({ params }: { params: Promise<{ id: s
     <>
       <SiteHeader />
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 pb-28 pt-2">
+        <TrackOnMount event="launch_room_viewed" props={{ mode: "shared" }} />
         <SharedBanner sharedAt={doc.meta.sharedAt} />
         <LaunchRoom doc={doc} now={now} basePath={`/share/${id}`} />
       </main>

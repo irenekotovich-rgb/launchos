@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AUTHOR, AuthorCredit } from "@/components/author-credit";
+import { AnalyticsInit } from "@/components/analytics";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -30,6 +31,7 @@ export default function RootLayout({
       <body
         className="bg-metal flex min-h-dvh flex-col antialiased"
       >
+        <AnalyticsInit />
         {children}
         <AuthorCredit />
       </body>

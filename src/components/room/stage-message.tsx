@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { MAILTO_MAX_LENGTH, mailtoUrl, type StageMessage as Message } from "@/lib/notify";
 import { cn } from "@/lib/utils";
 import { markNotified } from "@/lib/rollout-edit";
+import { track } from "@/lib/analytics";
 import type { RolloutPercent } from "@/lib/types";
 import { useOptionalEditor } from "./editors";
 
@@ -13,7 +14,10 @@ import { useOptionalEditor } from "./editors";
 export function StageMessage({ message, label, stage }: { message: Message; label: string; stage: RolloutPercent }) {
   const editor = useOptionalEditor();
   // In an own launch, opening or copying the message records it as sent (the PMM's client sends it).
-  const sent = () => editor?.apply((d, now) => markNotified(d, stage, now));
+  const sent = () => {
+    track("stage_notification_opened", { stage });
+    editor?.apply((d, now) => markNotified(d, stage, now));
+  };
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const copy = async () => {

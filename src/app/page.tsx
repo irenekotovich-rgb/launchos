@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { TrackedLink } from "@/components/tracked-link";
 import { ArrowRight } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { buttonVariants } from "@/components/ui/button";
@@ -27,12 +27,12 @@ export default function Home() {
             out. Stakeholders get a read-only link instead of a status meeting.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/demo" className={cn(buttonVariants({ size: "lg" }), "h-11 px-5 text-base")}>
+            <TrackedLink href="/demo" event="hero_cta_click" props={{ cta: "demo" }} className={cn(buttonVariants({ size: "lg" }), "h-11 px-5 text-base")}>
               Open the demo launch <ArrowRight />
-            </Link>
-            <Link href="/new" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 px-5 text-base")}>
+            </TrackedLink>
+            <TrackedLink href="/new" event="hero_cta_click" props={{ cta: "brief" }} className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 px-5 text-base")}>
               Start your brief
-            </Link>
+            </TrackedLink>
           </div>
           <p className="text-sm text-muted-foreground">
             Free and open source. No sign-up. Run it on your own keys for real launches.

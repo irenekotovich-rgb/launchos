@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Lightbulb, Minus, X } from "lucide-react";
 import type { Suggestion } from "@/lib/launch-status";
+import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 /** How many popups show at once before "N more". */
@@ -66,8 +67,27 @@ export function Suggestions({ items, storageKey }: { items: Suggestion[]; storag
     persist([...dismissed, id]);
   };
 
-  if (!mounted) return null;
   const open = items.filter((s) => !dismissed.includes(s.id));
+  return <SuggestionsView {...{ open, dismissed, minimised, showAll, setShowAll, mounted, expand, minimise, dismiss, persist, pillRef, headingRef, setMinimised }} />;
+}
+
+/** Kind of a suggestion id without launch-specific parts, e.g. "metric-near" — safe as an analytics property. */
+const kindOf = (id: string) => id.replace(/-(f|s|d|c)-[\w-]+$|-\d+$|-(analysis|alignment|brief|assets|readiness|rollout)$/g, "");
+
+function SuggestionsView({
+  open, dismissed, minimised, showAll, setShowAll, mounted, expand, minimise, dismiss, persist, pillRef, headingRef, setMinimised,
+}: {
+  open: Suggestion[]; dismissed: string[]; minimised: boolean; showAll: boolean; setShowAll: (f: (v: boolean) => boolean) => void; mounted: boolean;
+  expand: () => void; minimise: () => void; dismiss: (id: string) => void; persist: (n: string[]) => void;
+  pillRef: React.RefObject<HTMLButtonElement | null>; headingRef: React.RefObject<HTMLParagraphElement | null>; setMinimised: (v: boolean) => void;
+}) {
+  const shownKey = open.map((s) => s.id).join("|");
+  useEffect(() => {
+    if (!mounted) return;
+    for (const s of open) track("bottleneck_suggestion_shown", { kind: kindOf(s.id), severity: s.severity });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, shownKey]);
+  if (!mounted) return null;
   const warn = open.some((s) => s.severity === "warn");
 
   if (!open.length) {
@@ -131,7 +151,10 @@ export function Suggestions({ items, storageKey }: { items: Suggestion[]; storag
             <div className="min-w-0 flex-1">
               <a
                 href={`#${s.section}`}
-                onClick={() => onNarrow() && setMinimised(true)}
+                onClick={() => {
+                  track("bottleneck_suggestion_clicked", { kind: kindOf(s.id), severity: s.severity });
+                  if (onNarrow()) setMinimised(true);
+                }}
                 className="text-sm font-semibold leading-snug hover:underline"
               >
                 {s.title}
