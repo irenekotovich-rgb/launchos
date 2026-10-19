@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
+import { REPO_URL } from "@/lib/author";
 
 export function SiteHeader() {
   return (
@@ -9,7 +10,7 @@ export function SiteHeader() {
         <Link href="/demo" className="hover:text-foreground">Demo</Link>
         <Link href="/new" className="hover:text-foreground">New launch</Link>
         <Link href="/how" className="hover:text-foreground max-sm:hidden">How I built this</Link>
-        <a href="https://github.com/iryna-kotovych/launchos" className="hover:text-foreground" target="_blank" rel="noopener">
+        <a href={REPO_URL} className="hover:text-foreground" target="_blank" rel="noopener">
           GitHub
         </a>
       </nav>

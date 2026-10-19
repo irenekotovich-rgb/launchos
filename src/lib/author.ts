@@ -4,3 +4,6 @@ export const AUTHOR = {
   name: "Iryna Kotovych",
   url: "https://www.linkedin.com/in/irynakotovych/",
 } as const;
+
+/** The public repository — the single place to change if the GitHub account is renamed again. */
+export const REPO_URL = "https://github.com/iryna-kotovych/launchos";
