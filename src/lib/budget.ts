@@ -21,7 +21,10 @@ export function dailyLimit(env: NodeJS.ProcessEnv = process.env): number {
 
 /** Runs per client per rolling hour (0 = off). */
 export function clientLimit(env: NodeJS.ProcessEnv = process.env): number {
-  const n = Number(env.LAUNCHOS_RUNS_PER_CLIENT_HOUR ?? 3);
+  // An empty value (as copied from .env.example) means "default", not 0 = off.
+  const raw = env.LAUNCHOS_RUNS_PER_CLIENT_HOUR;
+  if (raw === undefined || raw.trim() === "") return 3;
+  const n = Number(raw);
   return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 3;
 }
 

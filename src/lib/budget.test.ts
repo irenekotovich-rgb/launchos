@@ -86,3 +86,11 @@ describe("reservations (repo audit)", () => {
     expect((await reserveRun(t, "c", RUN_COST.check)).allowed).toBe(true);
   });
 });
+
+describe("empty env values mean default (fresh clone with .env.example copied)", () => {
+  it("empty per-client limit is 3, not off", async () => {
+    const { clientLimit } = await import("./budget");
+    expect(clientLimit({ LAUNCHOS_RUNS_PER_CLIENT_HOUR: "" } as unknown as NodeJS.ProcessEnv)).toBe(3);
+    expect(dailyLimit({ LAUNCHOS_DAILY_LIVE_RUNS: "" } as unknown as NodeJS.ProcessEnv)).toBe(25);
+  });
+});
