@@ -12,7 +12,7 @@ const REPO = "https://github.com/irenekotovich-rgb/launchos";
 const STEPS = [
   { title: "Docs before code", body: "PRD, positioning, launch plan and metrics were the first commit. Every later change that touched behaviour updated the docs in the same PR." },
   { title: "One intake, then hands-off", body: "One batch of questions at the start (keys, demo content, visual direction, scope changes). After that the agents ran milestones without asking — except one planned design checkpoint." },
-  { title: "Small PRs, every one reviewed", body: "Branch → reviewer-grade description → automated @claude review → fix or argue every point in the thread → squash merge. Nothing pushed straight to main." },
+  { title: "Small PRs, every one reviewed", body: "Branch → reviewer-grade description → automated @claude review → fix or argue every point in the thread → squash merge. Nothing pushed to main after the initial docs commit; every PR from #2 on (#1 installed the reviewer) has the review and the replies." },
   { title: "Visual QA on every UI change", body: "Playwright screenshots at 390 / 768 / 1440 px, long-input runs (60-char name, 300-char claim), and the images actually looked at before opening the PR." },
   { title: "A design checkpoint", body: "Once the product worked end to end, the owner supplied a visual reference (chrome + burgundy metal) and product changes; those shipped as their own reviewed PRs." },
   { title: "Live runs and an audit", body: "Generation and the consistency check were verified against real models, and a whole-repository audit closed dependency, privacy and drift issues before launch." },
@@ -36,11 +36,11 @@ const SPLIT = {
 };
 
 const CAUGHT = [
-  "A UI library had installed an unrelated npm package named “cn” — caught in the first review.",
-  "The exported launch file carried the share link's delete token — fixed before merge.",
-  "Whitespace in an env var turned the public demo's daily budget into “unlimited”.",
-  "Analytics would have sent share-link ids (which are credentials) inside page URLs.",
-  "A free model tier rejected one schema keyword; found only by running the check live.",
+  { text: "A UI library had installed an unrelated npm package named “cn” — flagged by the reviewer on the scaffold PR.", pr: 2 },
+  { text: "The exported launch file carried the share link's delete token — fixed before merge.", pr: 11 },
+  { text: "Whitespace in an env var turned the public demo's daily budget into “unlimited”.", pr: 17 },
+  { text: "Analytics would have sent share-link ids (which are credentials) inside page URLs.", pr: 18 },
+  { text: "Gemini's free lite models reject the `maxItems` schema keyword — found only by running the check live.", pr: 17 },
 ];
 
 export default function HowPage() {
@@ -98,7 +98,15 @@ export default function HowPage() {
           <p className="mt-1 text-muted-foreground">A few real examples — each is a merged pull request with the conversation attached.</p>
           <ul className="mt-4 flex flex-col gap-2">
             {CAUGHT.map((c) => (
-              <li key={c} className="flex gap-3"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-brand-orange" aria-hidden />{c}</li>
+              <li key={c.text} className="flex gap-3">
+                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-brand-orange" aria-hidden />
+                <span>
+                  {c.text.replace("`maxItems`", "maxItems")}{" "}
+                  <a href={`${REPO}/pull/${c.pr}`} className="font-semibold text-primary underline-offset-4 hover:underline" target="_blank" rel="noopener">
+                    PR #{c.pr} ↗
+                  </a>
+                </span>
+              </li>
             ))}
           </ul>
         </section>

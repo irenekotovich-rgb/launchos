@@ -1,5 +1,6 @@
 // Records the README GIF: a scripted tour of the demo launch room, then converts it with ffmpeg.
-// Usage: npm run build && LAUNCHOS_QA=1 npm start, then: node scripts/record-demo-gif.mjs
+// Requires ffmpeg on PATH (brew install ffmpeg). Usage: npm run build && LAUNCHOS_QA=1 npm start,
+// then: node scripts/record-demo-gif.mjs
 import { chromium } from "playwright";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readdirSync, renameSync } from "node:fs";
@@ -30,5 +31,5 @@ await ctx.close();
 await browser.close();
 const webm = readdirSync(TMP).find((f) => f.endsWith(".webm"));
 renameSync(`${TMP}/${webm}`, `${TMP}/tour.webm`);
-execFileSync("ffmpeg", ["-y", "-i", `${TMP}/tour.webm`, "-vf", "fps=8,scale=800:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle", `${OUT}/demo.gif`], { stdio: "ignore" });
+execFileSync("ffmpeg", ["-y", "-i", `${TMP}/tour.webm`, "-vf", "fps=8,scale=800:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle", `${OUT}/demo.gif`], { stdio: ["ignore", "ignore", "inherit"] }); // ffmpeg errors stay visible
 console.log("wrote", `${OUT}/demo.gif`);

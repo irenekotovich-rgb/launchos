@@ -31,12 +31,13 @@ flowchart LR
   B[Brief form] -->|runGeneration| P[Deterministic plan<br/>tier · phases · rollout]
   B -->|POST /api/generate| G{Model chain}
   G --> M1[Gemini flash → flash-lite → 3.1-lite]
-  M1 -.quota / error.-> M2[OpenRouter free models]
+  M1 -.quota / error / timeout.-> M2[OpenRouter free models]
   M2 -.all failed.-> U[Graceful: generation unavailable]
   G -->|tier · messaging · analysis · 8 assets| D[(LaunchDoc JSON<br/>in localStorage)]
   P --> D
   D --> R[Launch room]
-  R -->|/api/consistency| C[Fixed rubric check]
+  R -->|/api/consistency · /api/asset| G
+  G --> C[Fixed rubric check · regenerated assets]
   R -->|/api/share| S[(Private Vercel Blob<br/>redacted snapshot)]
   S --> V[Read-only share page]
 ```
@@ -132,6 +133,8 @@ npm run qa:long-inputs            # 60-char name, 300-char claim; generation stu
 npm run qa:edit-flow | qa:rollout-flow | qa:share-flow | qa:sections | qa:viewport
 npm run qa:consistency            # QA_STUB_CONSISTENCY=1 to use a fixture
 npm run qa:live-generate          # one LIVE generation (uses your keys and budget)
+npm run qa:analytics              # analytics events fire (PostHog requests intercepted, nothing sent)
+node scripts/record-demo-gif.mjs  # re-record docs/media/demo.gif (needs ffmpeg on PATH)
 ```
 All scripts honour `BASE_URL` (default http://localhost:3000).
 
