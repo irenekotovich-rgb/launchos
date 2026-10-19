@@ -57,6 +57,10 @@ No direct pushes to main after the initial docs commit. For every logical task:
    docs/decisions-log.md
 Target: 10–15 PRs across the project, each readable in under 5 minutes.
 
+## Dependency security updates
+Dependabot alerts and security updates are on. Its PRs are not merged blindly: CI (lint, tsc,
+tests, build) must be green, then request `@claude` review, answer it, and merge like any PR.
+
 ## Visual QA — mandatory before any UI PR
 - Run the app, screenshot every changed screen at 390 / 768 / 1440 px
   (Playwright), and actually LOOK at the images: text overflow, clipped labels,

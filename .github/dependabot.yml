@@ -1,0 +1,19 @@
+# Security updates are enabled in the repo settings; this file only shapes the PRs they open.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    # 0 = no routine version bumps — only security fixes open PRs.
+    open-pull-requests-limit: 0
+    labels: [dependencies, security]
+    commit-message:
+      prefix: "fix(deps)"
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+    commit-message:
+      prefix: "chore(ci)"
