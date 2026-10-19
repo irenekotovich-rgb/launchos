@@ -13,6 +13,33 @@ export const neutralise = (s: string) => s.replace(/<\/(asset|brief)/gi, "</ $1"
 /** Case- and whitespace-insensitive comparison form for excerpt matching. */
 export const squash = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
 
+export const MAX_FINDINGS = 40;
+
+/**
+ * Drops findings for unknown assets or with non-verbatim excerpts, THEN caps at MAX_FINDINGS
+ * (so hallucinated findings can't push valid ones out). The cap is enforced here because Gemini
+ * lite models reject maxItems in the response schema.
+ */
+export function finalizeFindings(
+  raw: z.infer<typeof consistencyOutput>["findings"],
+  assets: { id: string; content: string }[],
+): ConsistencyFinding[] {
+  const contentById = new Map(assets.map((a) => [a.id, squash(a.content)]));
+  const valid = raw.filter(
+    (f) => contentById.has(f.assetId) && contentById.get(f.assetId)!.includes(squash(normalizeText(f.excerpt)).replace(/^["“]|["”]$/g, "")),
+  );
+  if (valid.length > MAX_FINDINGS) console.warn(`[consistency] ${valid.length} findings, truncated to ${MAX_FINDINGS}`);
+  return valid.slice(0, MAX_FINDINGS).map((f, i) => ({
+    id: `cf-${i + 1}`,
+    assetId: f.assetId,
+    severity: f.severity,
+    category: f.category,
+    excerpt: normalizeText(f.excerpt).slice(0, 300),
+    briefReference: normalizeText(f.briefReference).slice(0, 300),
+    suggestion: normalizeText(f.suggestion).slice(0, 500),
+  }));
+}
+
 export async function checkConsistency(
   req: z.infer<typeof consistencyRequest>,
   now = new Date(),
@@ -22,23 +49,8 @@ export async function checkConsistency(
     .map((a) => `<asset id="${a.id}" type="${a.type}" title="${a.title.replace(/"/g, "'")}">\n${neutralise(a.content)}\n</asset>`)
     .join("\n\n");
   const text = render(prompt.body, { brief: briefAsText(req.brief), messaging: messagingAsText(req.messaging), assets });
-  const contentById = new Map(req.assets.map((a) => [a.id, squash(a.content)]));
   const r = await generateStructured(consistencyOutput, text, modelChain(), Date.now() + 100_000);
-  const ids = new Set(req.assets.map((a) => a.id));
-  const findings = r.object.findings
-    .filter((f) => ids.has(f.assetId)) // drop hallucinated asset ids
-    // Drop findings whose "verbatim" excerpt isn't actually in the asset — a deterministic guard
-    // against hallucinated findings.
-    .filter((f) => contentById.get(f.assetId)!.includes(squash(normalizeText(f.excerpt)).replace(/^["“]|["”]$/g, "")))
-    .map((f, i) => ({
-      id: `cf-${i + 1}`,
-      assetId: f.assetId,
-      severity: f.severity,
-      category: f.category,
-      excerpt: normalizeText(f.excerpt).slice(0, 300),
-      briefReference: normalizeText(f.briefReference).slice(0, 300),
-      suggestion: normalizeText(f.suggestion).slice(0, 500),
-    }));
+  const findings = finalizeFindings(r.object.findings, req.assets);
   return {
     findings,
     model: { step: "consistency", modelId: r.modelId, ranAt: now.toISOString(), prompt: prompt.name, promptVersion: prompt.version },

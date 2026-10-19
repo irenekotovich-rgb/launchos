@@ -57,7 +57,7 @@ All optional — without model keys the app still works and shows a graceful "ge
 |---|---|
 | `GOOGLE_GENERATIVE_AI_API_KEY` | Primary model (Gemini) |
 | `OPENROUTER_API_KEY` | Fallback models (OpenRouter free tier) |
-| `LAUNCHOS_PRIMARY_MODEL` / `LAUNCHOS_FALLBACK_MODELS` | Override model ids (comma-separated fallbacks) |
+| `LAUNCHOS_PRIMARY_MODEL` / `LAUNCHOS_FALLBACK_MODELS` | Override model ids, comma-separated (Gemini list / OpenRouter list) |
 | `BLOB_READ_WRITE_TOKEN` | Share links + daily budget counter (Vercel Blob); in-memory without it |
 | `LAUNCHOS_DAILY_LIVE_RUNS` | Daily live-generation cap (default 25, `0` = unlimited) |
 | `LAUNCHOS_RUNS_PER_CLIENT_HOUR` | Per-client hourly cap (default 3, `0` = off) |

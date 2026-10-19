@@ -11,18 +11,21 @@
 import "server-only";
 import { BlobNotFoundError, get, put } from "@vercel/blob";
 
+/** Non-negative integer from env; empty or whitespace means the default (never 0 = unlimited/off). */
+export function intEnv(raw: string | undefined, fallback: number): number {
+  if (raw === undefined || raw.trim() === "") return fallback;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : fallback;
+}
+
 /** Runs per UTC day. 0 = unlimited (self-hosted forks on their own keys). */
 export function dailyLimit(env: NodeJS.ProcessEnv = process.env): number {
-  const raw = env.LAUNCHOS_DAILY_LIVE_RUNS;
-  if (raw === undefined || raw === "") return 25;
-  const n = Number(raw);
-  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 25;
+  return intEnv(env.LAUNCHOS_DAILY_LIVE_RUNS, 25);
 }
 
 /** Runs per client per rolling hour (0 = off). */
 export function clientLimit(env: NodeJS.ProcessEnv = process.env): number {
-  const n = Number(env.LAUNCHOS_RUNS_PER_CLIENT_HOUR ?? 3);
-  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 3;
+  return intEnv(env.LAUNCHOS_RUNS_PER_CLIENT_HOUR, 3);
 }
 
 const HOUR = 3_600_000;

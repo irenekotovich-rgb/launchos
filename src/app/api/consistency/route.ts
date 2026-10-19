@@ -1,6 +1,7 @@
 // POST /api/consistency — run the fixed rubric over the asset kit; findings per asset.
 import { NextResponse } from "next/server";
 import { checkConsistency } from "@/lib/ai/consistency";
+import { describeError } from "@/lib/ai/models";
 import { fail, parseBody, reserve, type Failure } from "@/lib/ai/route-guard";
 import { RUN_COST } from "@/lib/budget";
 import { consistencyRequest } from "@/lib/ai/schemas";
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
     return NextResponse.json<ConsistencyResponse>({ status: "ok", result: await checkConsistency(body.data) });
   } catch (err) {
     await slot.refund();
-    console.warn("[consistency] failed", err);
+    console.warn("[consistency] failed", describeError(err));
     return fail({ status: "unavailable", message: "The consistency check couldn't run right now — try again later." });
   }
 }

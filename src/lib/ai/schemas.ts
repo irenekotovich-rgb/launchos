@@ -82,8 +82,9 @@ export const consistencyOutput = z.object({
         briefReference: z.string(),
         suggestion: z.string(),
       }),
-    )
-    .max(40),
+    ),
+  // No .max() here: Gemini lite models reject maxItems on this array ("invalid argument");
+  // the 40-finding cap is applied in code (lib/ai/consistency.ts).
 });
 
 /** Regenerate one asset from the same brief + messaging block. */
