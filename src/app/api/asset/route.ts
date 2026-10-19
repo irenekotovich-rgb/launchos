@@ -1,7 +1,7 @@
 // POST /api/asset — regenerate one asset from the same brief + messaging block.
 import { NextResponse } from "next/server";
 import { generateAsset } from "@/lib/ai/generate";
-import { GenerationUnavailable } from "@/lib/ai/models";
+import { describeError } from "@/lib/ai/models";
 import { fail, parseBody, reserve, type Failure } from "@/lib/ai/route-guard";
 import { RUN_COST } from "@/lib/budget";
 import { assetRequest } from "@/lib/ai/schemas";
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     return NextResponse.json<AssetResponse>({ status: "ok", result: await generateAsset(brief, messaging, type, undefined, undefined, metrics) });
   } catch (err) {
     await slot.refund();
-    console.warn("[asset] failed", err instanceof GenerationUnavailable ? err.attempts : err);
+    console.warn("[asset] failed", describeError(err));
     return fail({ status: "unavailable", message: "This asset couldn't be regenerated right now — try again later." });
   }
 }
