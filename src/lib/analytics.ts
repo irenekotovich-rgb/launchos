@@ -73,8 +73,16 @@ export function initAnalytics(): void {
         return event;
       },
     });
-    client = posthog;
-    for (const [e, p] of queue.splice(0)) posthog.capture(e, p);
+    // Country only (ISO code from Vercel's edge header) — never an IP. Registered before the
+    // queued events flush so every event carries it; on failure events simply have no country.
+    void fetch("/api/geo")
+      .then((r) => (r.ok ? (r.json() as Promise<{ country: string | null }>) : { country: null }))
+      .catch(() => ({ country: null }))
+      .then(({ country }) => {
+        if (country) posthog.register({ country });
+        client = posthog;
+        for (const [e, p] of queue.splice(0)) posthog.capture(e, p);
+      });
   });
 }
 
